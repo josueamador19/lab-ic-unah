@@ -1,0 +1,218 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #000000;
+  --blue: #002C9E;
+  --blue-mid: #1A44A8;
+  --blue-soft: #3361B8;
+  --blue-pale: #D6E0F5;
+  --blue-lite: #EBF0FA;
+  --gold: #FFFF00;
+  --gold-lt: #FFFF00;
+  --white: #ffffff;
+  --gray-dk: #4a5e78;
+  --gray: #7a90aa;
+  --gray-lt: #b8cce0;
+  --bg: #f2f7fc;
+  --card: #ffffff;
+  --border: rgba(0, 44, 158, 0.12);
+  --shadow: 0 3px 20px rgba(27, 45, 80, 0.08);
+  --shadow-lg: 0 10px 40px rgba(27, 45, 80, 0.13);
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--navy);
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* NORMA TAG */
+.norma-tag {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.58rem;
+  background: #E5C4AB;
+  color: #6B3F1E;
+  border: 1px solid rgba(107, 63, 30, 0.30);
+  padding: 0.18rem 0.6rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.norma-tag-green {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  background: #f0f8e8;
+  color: #3a7020;
+  border: 1px solid rgba(58, 112, 32, 0.25);
+  padding: 0.22rem 0.65rem;
+  border-radius: 5px;
+  letter-spacing: 0.3px;
+  display: inline-block;
+}
+
+.cat-pill {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 0.58rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  background: #40C4CC;
+  color: #fff;
+  border: 1px solid rgba(0, 150, 160, 0.35);
+  padding: 0.18rem 0.6rem;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* SVC TABLE */
+.svc-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.svc-table thead tr { background: #FFFF00; }
+.svc-table th {
+  padding: 0.85rem 1.15rem;
+  text-align: left;
+  font-size: 0.78rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #1a2a10;
+  font-weight: 800;
+  border-bottom: 2px solid #CCCC00;
+}
+.svc-table th.r { text-align: right; }
+.svc-table tbody tr {
+  border-bottom: 1px solid rgba(0, 44, 158, 0.06);
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.svc-table tbody tr:last-child { border-bottom: none; }
+.svc-table tbody tr:hover { background: var(--blue-lite); }
+.svc-table td {
+  padding: 0.9rem 1.15rem;
+  font-size: 0.85rem;
+  color: var(--navy);
+  vertical-align: middle;
+  background: var(--white);
+  text-transform: uppercase;
+}
+
+/* MOSAIC ANIMATION */
+@keyframes mUp { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+@keyframes mDown { from { transform: translateY(-50%); } to { transform: translateY(0); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+.mstrip-u1 { animation: mUp 30s linear infinite; }
+.mstrip-u2 { animation: mUp 22s linear infinite; }
+.mstrip-u3 { animation: mUp 26s linear infinite; }
+.mstrip-d1 { animation: mDown 25s linear infinite; }
+.mstrip-d2 { animation: mDown 20s linear infinite; }
+
+/* PROCESS STRIPES */
+.proc-stripe {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.proc-stripe::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -18%;
+  width: 32%; height: 100%;
+  background: transparent;
+  border-right: 216px solid var(--gold);
+  transform: skewX(28deg);
+  transform-origin: bottom left;
+  z-index: 0;
+  opacity: 0.6;
+}
+.proc-stripe::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -2%;
+  width: 22%; height: 50%;
+  background: transparent;
+  border-right: 216px solid var(--gold);
+  transform: skewX(28deg);
+  transform-origin: bottom left;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* TOPO CARD */
+.topo-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.topo-hdr {
+  background: #FFFF00;
+  padding: 0.9rem 1.2rem;
+  display: flex;
+  gap: 1rem;
+  border-bottom: 2px solid #CCCC00;
+}
+.topo-hdr span {
+  font-size: 0.78rem;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: #1a2a10;
+  flex: 1;
+  font-weight: 800;
+}
+.topo-row {
+  display: flex;
+  gap: 1rem;
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid rgba(0, 44, 158, 0.06);
+  transition: background 0.15s;
+  cursor: pointer;
+  align-items: center;
+}
+.topo-row:last-child { border-bottom: none; }
+.topo-row:hover { background: var(--blue-lite); }
+
+/* STATUS BADGE */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.60rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: #fff8e1;
+  color: #a06800;
+  border: 1px solid #FFFF00;
+  padding: 0.22rem 0.7rem;
+  border-radius: 100px;
+}
+.sdot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #FFFF00;
+  display: inline-block;
+  animation: pulse 1.5s ease infinite;
+}
+
+/* LEAFLET FIX */
+.leaflet-container { z-index: 1; }
