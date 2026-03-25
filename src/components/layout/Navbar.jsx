@@ -1,5 +1,8 @@
 import { Link, NavLink } from 'react-router-dom'
 
+const LOGO_UNAH = 'https://www.unah.edu.hn/themes/portalunah-new/assets/images/logo-unah.png'
+const LOGO_IC = 'https://dircom.unah.edu.hn/dmsdocument/13691-ingenieria-civil-color-png'
+
 export default function Navbar() {
   return (
     <nav
@@ -7,16 +10,47 @@ export default function Navbar() {
       style={{ boxShadow: '0 2px 14px rgba(27,45,80,.07)' }}
     >
       {/* Logo */}
-      <Link to="/" className="flex items-center gap-[0.85rem] no-underline">
-      
-          <img src="https://www.unah.edu.hn/themes/portalunah-new/assets/images/logo-unah.png" alt="" srcset="" />
-      
-        <div>
-          <div className="text-[0.90rem] text-black font-bold leading-[1.25]" style={{ fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>
-            Lab. Topografía, Suelos y Materiales
+      <Link to="/" className="flex items-center no-underline" style={{ gap: '0.75rem', padding: '0.6rem 0' }}>
+        {/* Logo UNAH */}
+        <img
+          src={LOGO_UNAH}
+          alt="UNAH"
+          style={{ height: 56, width: 'auto', objectFit: 'contain' }}
+        />
+        {/* Logo Ingeniería Civil */}
+        <img
+          src={LOGO_IC}
+          alt="Ingeniería Civil UNAH"
+          style={{ height: 56, width: 'auto', objectFit: 'contain' }}
+        />
+
+    
+        {/* Texto */}
+        <div style={{ paddingLeft: '0.25rem' }}>
+          <div
+            style={{
+              fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif',
+              fontSize: '0.72rem',
+              color: '#4a5e78',
+              letterSpacing: '0.5px',
+              textTransform: 'uppercase',
+              marginBottom: '0.2rem',
+            }}
+          >
+            Laboratorio de
           </div>
-          <div className="text-[0.60rem] text-[var(--gray)] uppercase tracking-[1px] mt-[0.1rem]" style={{ fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>
-            Depto. Ingeniería Civil — UNAH
+          <div
+            style={{
+              fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif',
+              fontSize: '1rem',
+              color: '#000',
+              fontWeight: 800,
+              lineHeight: 1.2,
+              letterSpacing: '-0.2px',
+              textTransform: 'uppercase',
+            }}
+          >
+            Topografía, Suelos y Materiales
           </div>
         </div>
       </Link>
