@@ -1,101 +1,177 @@
-import { STATS } from '../../data/labData'
+import bgVideo from '../../assets/hero-video.mp4'
+import pumaImg from '../../assets/puma_sin_fondo.png'
 
-const MOSAIC_IMAGES = [
-  'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=200&h=120&fit=crop',
-  'https://images.unsplash.com/photo-1581092580497-e0d23cbdf1dc?w=200&h=120&fit=crop',
-  'https://images.unsplash.com/photo-1581092918056-0c4c3acd3789?w=200&h=120&fit=crop',
-  'https://images.unsplash.com/photo-1590736969955-71cc94901144?w=200&h=120&fit=crop',
-  'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=200&h=120&fit=crop',
-  'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=200&h=120&fit=crop',
+const BG_VIDEO_SRC = bgVideo
+const PUMA_IMG_SRC = pumaImg
+
+const STATS = [
+  { num: '20+',              label: 'Tipos de Ensayo'     },
+  { num: '5',                label: 'Categorías'          },
+  { num: 'ASTM / AASHTO',   label: 'Normas Aplicadas'    },
+  { num: 'UNAH / FUNDAUNAH', label: 'En Colaboración Con' },
 ]
 
-const strips = [
-  { cls: 'mstrip-u1', imgs: [0, 1, 2, 0, 1, 2] },
-  { cls: 'mstrip-u2', imgs: [3, 4, 5, 3, 4, 5] },
-  { cls: 'mstrip-u3', imgs: [1, 3, 0, 1, 3, 0] },
-  { cls: 'mstrip-d1', imgs: [2, 5, 4, 2, 5, 4] },
-  { cls: 'mstrip-d2', imgs: [4, 0, 3, 4, 0, 3] },
-]
+const font = 'Helvetica Neue, Helvetica, Arial, sans-serif'
 
 export default function HeroSection() {
   return (
-    <div className="min-h-[90vh] flex flex-col relative overflow-hidden">
-      {/* Mosaic BG */}
-      <div className="absolute inset-0 overflow-hidden z-0" style={{ background: '#091628' }}>
-        <div className="flex h-full w-full" style={{ gap: '5px' }}>
-          {strips.map((s, i) => (
-            <div key={i} className="flex-1 overflow-hidden">
-              <div className={`flex flex-col ${s.cls}`} style={{ gap: '5px' }}>
-                {s.imgs.map((imgIdx, j) => (
-                  <div key={j} className="flex-shrink-0 rounded-[9px] overflow-hidden" style={{ height: '140px', background: '#091628' }}>
-                    <img src={MOSAIC_IMAGES[imgIdx]} alt="" className="w-full h-full object-cover opacity-60" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div style={{ minHeight: '10vh', maxHeight:'90vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Overlay */}
-      <div className="absolute inset-0 z-[1]" style={{ background: 'linear-gradient(110deg,rgba(27,45,80,.92) 0%,rgba(27,45,80,.78) 50%,rgba(0,44,158,.45) 100%)' }} />
-      <div className="absolute bottom-0 left-0 right-0 h-[180px] z-[2]" style={{ background: 'linear-gradient(to top,var(--bg),transparent)' }} />
+      {/* VIDEO BG */}
+      <video
+        src={BG_VIDEO_SRC}
+        autoPlay muted loop playsInline
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.90, zIndex: 0 }}
+      />
 
-      {/* Body */}
-      <div className="relative z-[3] flex items-center flex-1 px-[5vw] py-[5rem] gap-12">
-        <div className="flex-1 max-w-[620px]">
-          <div className="flex items-center gap-3 mb-5 text-[0.65rem] tracking-[3px] uppercase" style={{ color: 'var(--gold-lt)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>
-            <span className="w-6 h-[2px]" style={{ background: 'var(--gold-lt)', display: 'inline-block' }} />
-            Laboratorio de Ingeniería Civil · UNAH
+      {/* OVERLAY */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        background: 'linear-gradient(105deg, rgba(10, 22, 50, 0.95) 0%, rgba(10, 22, 50, 0.85) 50%, rgb(0 30 120 / 24%) 100%)',
+      }} />
+
+      {/* FADE BOTTOM */}
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0, height: 160, zIndex: 2,
+        background: 'linear-gradient(to top, #0a1628, transparent)',
+      }} />
+
+      {/* MAIN BODY */}
+      <div style={{
+        position: 'relative', zIndex: 3,
+        display: 'flex', flex: 1,
+        padding: '5rem 5vw', gap: '2rem',
+      }}>
+
+        {/* LEFT */}
+        <div style={{ flex: '1 1 0', minWidth: 0 }}>
+
+          <div style={{
+            fontFamily: font, fontWeight: 700,
+            fontSize: '0.65rem', letterSpacing: '3px',
+            textTransform: 'uppercase', color: '#FFE033',
+            marginBottom: 22,
+          }}>
+            PLAN DE REACTIVACIÓN — VENTA DE SERVICIOS 2026
           </div>
 
-          <h1 className="font-black leading-[1.1] text-white mb-6" style={{ fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif', fontSize: 'clamp(1.8rem,3.8vw,3.6rem)', letterSpacing: '-0.5px' }}>
-            Ensayos de{' '}
-            <em style={{ color: 'var(--gold-lt)', fontStyle: 'normal' }}>Materiales</em>
-            {' '}&amp;{' '}
-            <em style={{ color: 'var(--gold-lt)', fontStyle: 'normal' }}>Topografía</em>
+          <h1 style={{
+            fontFamily: font, fontWeight: 900,
+            fontSize: 'clamp(2rem, 3.8vw, 3.6rem)',
+            lineHeight: 1.05, color: '#ffffff',
+            margin: '0 0 24px', letterSpacing: '-0.5px',
+          }}>
+            Laboratorio de
+            <span style={{ display: 'block' }}>Topografía</span>
+            <span style={{ display: 'block' }}>
+              Suelos y <em style={{ color: '#FFE033', fontStyle: 'normal' }}>Materiales</em>
+            </span>
           </h1>
 
-          <p className="text-[0.95rem] leading-[1.8] max-w-[490px] mb-9 uppercase" style={{ color: 'rgba(255,255,255,.75)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>
-            Servicios técnicos especializados bajo normas ASTM, AASHTO y ACI para proyectos de infraestructura en Honduras.
+          <p style={{
+            fontFamily: font, fontSize: '0.85rem', lineHeight: 1.75,
+            textTransform: 'uppercase', color: 'rgba(255,255,255,0.72)',
+            maxWidth: 460, marginBottom: 34,
+          }}>
+            Ensayos de suelos, concreto, agregados, acero y servicios de topografía
+            para proyectos de construcción e infraestructura. Bajo normas ASTM y AASHTO.
+            <br />UNAH / FUNDAUNAH.
           </p>
 
-          <div className="flex gap-4 flex-wrap">
+          <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
             <a
               href="#cotizacion"
-              className="inline-flex items-center gap-2 font-bold text-[0.86rem] px-8 py-[0.9rem] rounded-[8px] no-underline transition-all duration-200 hover:-translate-y-0.5"
-              style={{ background: 'var(--gold)', color: 'var(--navy)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif', boxShadow: '0 10px 24px rgba(255,255,0,0)' }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 10px 24px rgba(255,255,0,.4)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = '0 10px 24px rgba(255,255,0,0)'}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontFamily: font, fontWeight: 700, fontSize: '0.88rem',
+                padding: '0.85rem 1.8rem', borderRadius: 8,
+                background: '#FFE033', color: '#0a1628',
+                textDecoration: 'none',
+                transition: 'transform .15s, box-shadow .15s',
+                boxShadow: '0 6px 20px rgba(255,224,51,0)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 10px 28px rgba(255,224,51,0.45)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(255,224,51,0)'
+              }}
             >
               ✉ Solicitar Cotización
             </a>
+
             <a
               href="#servicios"
-              className="inline-flex items-center gap-2 font-medium text-[0.86rem] px-8 py-[0.9rem] rounded-[8px] no-underline text-white transition-all duration-200"
-              style={{ background: 'var(--blue)', border: '1px solid var(--blue)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#1A44A8'; e.currentTarget.style.borderColor = '#1A44A8' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--blue)'; e.currentTarget.style.borderColor = 'var(--blue)' }}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8,
+                fontFamily: font, fontWeight: 600, fontSize: '0.88rem',
+                padding: '0.85rem 1.8rem', borderRadius: 8,
+                background: '#1A44A8', color: '#ffffff',
+                textDecoration: 'none', border: '1px solid #1A44A8',
+                transition: 'background .15s, border-color .15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = '#1535A0'
+                e.currentTarget.style.borderColor = '#1535A0'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = '#1A44A8'
+                e.currentTarget.style.borderColor = '#1A44A8'
+              }}
             >
-              Ver Catálogo
+              Conocer Servicios
             </a>
           </div>
         </div>
+
+        {/* RIGHT: puma */}
+        <div style={{
+          flex: '0 0 auto',
+          display: 'flex', alignItems: 'flex-end', alignSelf: 'stretch',
+          justifyContent: 'flex-end',
+        }}>
+          <img
+            src={PUMA_IMG_SRC}
+            alt="Mascota Puma"
+            style={{
+              height: 'clamp(28px, 100%, 500px)',
+              width: 'auto',
+              maxWidth: '40vw',
+              objectFit: 'contain',
+              display: 'block',
+              filter: 'drop-shadow(0 16px 36px rgba(0,0,0,0.6))',
+              alignSelf: 'flex-start',
+            }}
+          />
+        </div>
       </div>
 
-      {/* Stats bar */}
-      <div className="relative z-[3] flex bg-white overflow-visible" style={{ borderTop: '1px solid var(--border)', boxShadow: '0 6px 20px rgba(27,45,80,.09)' }}>
+      {/* STATS BAR */}
+      <div style={{
+        position: 'relative', zIndex: 3,
+        display: 'flex', background: '#ffffff',
+        borderTop: '1px solid #e2e8f0',
+        boxShadow: '0 -4px 20px rgba(10,22,50,0.1)',
+      }}>
         {STATS.map((s, i) => (
-          <div
-            key={i}
-            className="flex-1 py-[1.35rem] pl-8"
-            style={{ borderRight: i < STATS.length - 1 ? '1px solid var(--border)' : 'none', paddingLeft: i === 0 ? '5vw' : undefined }}
-          >
-            <div className="text-[1.45rem] font-black" style={{ color: 'var(--blue)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>{s.num}</div>
-            <div className="text-[0.63rem] tracking-[1.5px] uppercase mt-[0.1rem]" style={{ color: 'var(--gray)', fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif' }}>{s.label}</div>
+          <div key={i} style={{
+            flex: 1,
+            padding: '1.3rem 1.5rem',
+            paddingLeft: i === 0 ? '5vw' : '1.5rem',
+            borderRight: i < STATS.length - 1 ? '1px solid #e2e8f0' : 'none',
+          }}>
+            <div style={{ fontFamily: font, fontWeight: 900, fontSize: '1.4rem', color: '#1A44A8' }}>
+              {s.num}
+            </div>
+            <div style={{ fontFamily: font, fontSize: '0.6rem', letterSpacing: '1.5px', textTransform: 'uppercase', color: '#6b7280', marginTop: 2 }}>
+              {s.label}
+            </div>
           </div>
         ))}
       </div>
+
     </div>
   )
 }

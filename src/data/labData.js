@@ -166,31 +166,48 @@ export const PROCESO_STEPS = [
   { num: '03', title: 'Muestreo', desc: 'Coordine la entrega o recolección de muestras según los protocolos establecidos por cada norma técnica.' },
   { num: '04', title: 'Resultados', desc: 'Recibirá un informe técnico oficial con los resultados, gráficas y conclusiones del ensayo realizado.' },
 ]
+ // Equipos
+import topografia from '../assets/topografia.png'
+import maquinaDeDesgaste       from '../assets/maquina_de_desgaste.jpg'
+import equipoHidrometria   from '../assets/EquipoDeHidrometria.jpg'
+import granulometria      from '../assets/granulometria.jpg'
+import compresionuniversal      from '../assets/compresionuniversal.jpg'
 
 export const EQUIPOS = [
   {
-    title: 'Estación Total & Dron RTK',
-    desc: 'Levantamientos topográficos de alta precisión con estación total Trimble S3 y dron DJI RTK para fotogrametría aérea y generación de modelos 3D del terreno.',
-    specs: ['Precisión angular: 3"', 'GPS RTK integrado', 'Alcance: 3,500 m', 'Fotogrametría UAV'],
-    badge: null,
+    title: 'Topografía',
+    desc: 'Ofrecemos levantamientos topográficos catastrales, planimétricos y altimétricos para proyectos de construcción e ingeniería. Contamos con estación total de alta precisión y dron RTK para fotogrametría aérea, cubriendo zonas urbanas y rurales en Tegucigalpa, San Pedro Sula e interior del país.',
+    specs: null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
+    badge: 'Topografía',
+    img: topografia, 
   },
   {
-    title: 'Prensa Hidráulica 2,000 kN',
-    desc: 'Ensayos de resistencia a compresión en cilindros y cubos de concreto, con control digital de carga y registro automático de curva fuerza-desplazamiento.',
-    specs: ['Capacidad: 2,000 kN', 'Precisión: ±0.5%', 'Display digital', 'Registro automático'],
-    badge: 'ASTM C39',
+    title: 'Maquina de Desgaste L.A',
+    desc: 'Equipo para determinar la resistencia al desgaste de agregados gruesos mediante abrasión e impacto. Ensayo bajo norma ASTM C131 / AASHTO T96.',
+    specs:null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
+    badge: 'Agregados · AG-02',
+    img: maquinaDeDesgaste,
   },
   {
-    title: 'Máquina de Desgaste Los Ángeles',
-    desc: 'Evaluación de la resistencia al desgaste de agregados gruesos mediante abrasión e impacto, siguiendo metodología ASTM C131 y C535.',
-    specs: ['Capacidad: 5 kg', 'RPM controlado', 'Timer digital', 'ASTM C131 / C535'],
-    badge: 'ASTM C131',
+    title: 'Equipo de Hidrometría',
+    desc: 'Determinación de la distribución granulométrica de suelos finos mediante sedimentación. Análisis de partículas menores a 0.075 mm bajo norma ASTM D7928 / AASHTO T88.',
+    specs: null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
+    badge: 'Suelos · SU-22',
+    img: equipoHidrometria, 
   },
   {
-    title: 'Equipo Proctor (Estándar & Modificado)',
-    desc: 'Determinación de la densidad máxima y humedad óptima de suelos mediante compactación controlada, con moldes y martillos calibrados.',
-    specs: ['Molde estándar 4"', 'Molde CBR 6"', 'Martillo 2.5 kg / 4.5 kg', 'ASTM D698 / D1557'],
-    badge: null,
+    title: 'Granulometría y Copa de Casagrande',
+    desc: 'Juego de tamices para análisis granulométrico (ASTM D6913) y copa de Casagrande para determinación del límite líquido de suelos (ASTM D4318 / AASHTO T89).',
+    specs: null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
+    badge: 'Suelos · SU-02 / SU-04',
+    img: granulometria, 
+  },
+  {
+    title: 'Máquina de Compresión Universal',
+    desc: 'Prensa hidráulica para ensayo de resistencia a la compresión de cilindros y bloques de concreto. Capacidad hasta 2,000 kN bajo norma ASTM C39 / AASHTO T22.',
+    specs: null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
+    badge: 'Concreto · CU-04',
+    img: compresionuniversal, 
   },
 ]
 
