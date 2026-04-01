@@ -5,6 +5,7 @@ import ServiciosSection from '../components/sections/ServiciosSection'
 import EquiposSection from '../components/sections/EquiposSection'
 import ProcesoSection from '../components/sections/ProcesoSection'
 import CotizacionSection from '../components/sections/CotizacionSection'
+import NormasSection from '../components/sections/NormasSection'
 import useQuote from '../hooks/useQuote'
 
 export default function HomePage() {
@@ -21,6 +22,7 @@ export default function HomePage() {
     <>
       <Navbar />
       <HeroSection />
+      <NormasSection/>
       <ServiciosSection onSelectSvc={handleSelectSvc} />
       <EquiposSection />
       <ProcesoSection />

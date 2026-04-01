@@ -126,17 +126,13 @@ export const ENSAYOS_NORMA = {
       { code: 'SU-09', name: 'Clasificación de Suelo', astm: 'ASTM D2487',  aashto: 'AASHTO M145' },
       { code: 'SU-10', name: 'Proctor Estándar',       astm: 'ASTM D698',   aashto: 'AASHTO T99' },
       { code: 'SU-11', name: 'Proctor Modificado',     astm: 'ASTM D1557',  aashto: 'AASHTO T180' },
-      { code: 'SU-13', name: 'CBR (California Bearing Ratio)', astm: 'ASTM D1883', aashto: 'AASHTO T193' },
     ],
   },
   concreto: {
     label: '🏗 Concreto',
     cols: ['Código', 'Ensayo', 'Norma ASTM', 'Referencia ACI'],
     rows: [
-      { code: 'CO-01', name: 'Resistencia a Compresión (cilindros)', astm: 'ASTM C39',  aashto: 'ACI 214' },
-      { code: 'CO-02', name: 'Resistencia a Flexión (vigas)',        astm: 'ASTM C78',  aashto: 'ACI 318' },
-      { code: 'CO-06', name: 'Asentamiento (Slump)',                 astm: 'ASTM C143', aashto: 'ACI 211' },
-      { code: 'CO-07', name: 'Diseño de Mezcla',                    astm: 'ASTM C192', aashto: 'ACI 211' },
+      { code: 'CO-01', name: 'Resistencia a Compresión (cilindros)', astm: 'ASTM C39',  aashto: 'ACI 214' }
     ],
   },
   agregados: {

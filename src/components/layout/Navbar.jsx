@@ -58,14 +58,9 @@ export default function Navbar() {
       {/* Links */}
       <ul className="hidden lg:flex gap-8 list-none items-center">
         <li>
-          <NavLink
-            to="/normas"
-            className={({ isActive }) =>
-              `text-[0.76rem] tracking-[0.5px] uppercase font-medium no-underline transition-colors duration-200 ${isActive ? 'text-[var(--blue)] font-bold' : 'text-[var(--gray-dk)] hover:text-[var(--blue)]'}`
-            }
-          >
+          <a href="/#normas" className="text-[0.76rem] tracking-[0.5px] uppercase font-medium no-underline text-[var(--gray-dk)] hover:text-[var(--blue)] transition-colors duration-200">
             Normas Aplicadas
-          </NavLink>
+          </a>
         </li>
         <li>
           <a href="/#servicios" className="text-[0.76rem] tracking-[0.5px] uppercase font-medium no-underline text-[var(--gray-dk)] hover:text-[var(--blue)] transition-colors duration-200">
