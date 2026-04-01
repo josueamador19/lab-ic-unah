@@ -152,10 +152,11 @@ export const ENSAYOS_NORMA = {
 }
 
 export const PROCESO_STEPS = [
-  { num: '01', title: 'Solicitud', desc: 'Complete el formulario de cotización en línea con los ensayos requeridos y datos del proyecto.' },
-  { num: '02', title: 'Cotización', desc: 'Nuestro equipo revisará su solicitud y le enviará una cotización formal en un plazo de 24 horas hábiles.' },
-  { num: '03', title: 'Muestreo', desc: 'Coordine la entrega o recolección de muestras según los protocolos establecidos por cada norma técnica.' },
-  { num: '04', title: 'Resultados', desc: 'Recibirá un informe técnico oficial con los resultados, gráficas y conclusiones del ensayo realizado.' },
+  { num: '01', title: 'Solicitud', desc: 'Complete el formulario con los ensayos requeridos, cantidad de muestras y datos del proyecto.' },
+  { num: '02', title: 'Cotización', desc: 'En línea llenando el formulario o presencial en el segundo piso del edificio B1. El equipo técnico le enviará una propuesta formal con tiempos de entrega en 24–48 horas hábiles.' },
+  { num: '03', title: 'Pago', desc: 'Se le comunicará el proceso de pago vía correo electrónico con las instrucciones y monto a cancelar.' },
+  { num: '04', title: 'Ensayo', desc: 'CEntrega de muestras en Edificio B1, 1er nivel. Horario de Lunes a Viernes / 8:00 AM - 3:00 PM' },
+  { num: '05', title: 'Resultados', desc: 'Informe firmado por el Ing. responsable con los resultados técnicos de los ensayos realizados.' },
 ]
  // Equipos
 import topografia from '../assets/topografia.png'

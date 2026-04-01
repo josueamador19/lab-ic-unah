@@ -6,6 +6,7 @@ import EquiposSection from '../components/sections/EquiposSection'
 import ProcesoSection from '../components/sections/ProcesoSection'
 import CotizacionSection from '../components/sections/CotizacionSection'
 import NormasSection from '../components/sections/NormasSection'
+import FAQSection from '../components/sections/FAQSection'
 import useQuote from '../hooks/useQuote'
 
 export default function HomePage() {
@@ -31,6 +32,7 @@ export default function HomePage() {
         onRemoveSvc={removeCode}
         onClear={clearCodes}
       />
+      <FAQSection />
       <Footer />
     </>
   )
