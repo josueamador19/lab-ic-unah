@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { SERVICIOS, TOPOGRAFIA } from "../../data/labData";
 
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+
 // Helper: busca el objeto completo por código
 function findServicio(code) {
   for (const cat of Object.values(SERVICIOS)) {
@@ -74,8 +76,97 @@ export default function CotizacionSection({
   const [searching, setSearching] = useState(false);
   const [mapLoaded, setMapLoaded] = useState(false);
 
+  // ── Estado del formulario ─────────────────────────────────────────────────
+  const [form, setForm] = useState({
+    nombre: "",
+    correo: "",
+    empresa: "",
+    telefono: "",
+    descripcion: "",
+  });
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState(null); // { ok, message }
+
   const DEFAULT_LAT = 14.0818;
   const DEFAULT_LNG = -87.2068;
+
+  const handleFormChange = (field) => (e) =>
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  // ── Envío al backend ──────────────────────────────────────────────────────
+  const handleSubmit = async () => {
+    if (selectedCodes.length === 0) return;
+
+    const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
+
+    const payload = {
+      nombre:      form.nombre.trim(),
+      correo:      form.correo.trim(),
+      empresa:     form.empresa.trim()   || null,
+      telefono:    form.telefono.trim()  || null,
+      descripcion: form.descripcion.trim() || null,
+      servicios:   serviciosSeleccionados.map((s) => ({
+        code:  s.code,
+        name:  s.name,
+        norma: s.norma,
+        sub:   s.sub ?? null,
+      })),
+      ubicacion: selectedCoords
+        ? {
+            lat:     selectedCoords.lat,
+            lng:     selectedCoords.lng,
+            address: selectedAddress ?? null,
+          }
+        : null,
+    };
+
+    // Validación mínima en el frontend
+    if (!payload.nombre) {
+      setResultado({ ok: false, message: "Por favor ingrese su nombre." });
+      return;
+    }
+    if (!payload.correo) {
+      setResultado({ ok: false, message: "Por favor ingrese su correo." });
+      return;
+    }
+
+    setEnviando(true);
+    setResultado(null);
+
+    try {
+      const res = await fetch(`${API_URL}/api/v1/cotizacion`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setResultado({ ok: true, message: data.message });
+        // Limpiar formulario tras envío exitoso
+        setForm({ nombre: "", correo: "", empresa: "", telefono: "", descripcion: "" });
+        onClear?.();
+      } else {
+        // Error de validación 422 o error del servidor
+        const detail = data?.detail;
+        const msg =
+          typeof detail === "string"
+            ? detail
+            : Array.isArray(detail)
+            ? detail.map((e) => e.msg).join(", ")
+            : "Error al enviar la solicitud.";
+        setResultado({ ok: false, message: msg });
+      }
+    } catch {
+      setResultado({
+        ok: false,
+        message: "No se pudo conectar con el servidor. Verifique su conexión.",
+      });
+    } finally {
+      setEnviando(false);
+    }
+  };
 
   // ── Actualiza marcador + geocodificación inversa ──────────────────────────
   const applyPosition = useCallback(
@@ -132,7 +223,6 @@ export default function CotizacionSection({
           maxZoom: 19,
         }).addTo(map);
 
-        // Icono estilo Google Maps (gota SVG)
         const dropIcon = L.divIcon({
           html: `<svg xmlns="http://www.w3.org/2000/svg" width="36" height="48" viewBox="0 0 36 48">
             <path d="M18 0C8.06 0 0 8.06 0 18c0 13.5 18 30 18 30S36 31.5 36 18C36 8.06 27.94 0 18 0z"
@@ -150,7 +240,6 @@ export default function CotizacionSection({
           draggable: true,
         }).addTo(map);
 
-        // Popup inicial de la sede del laboratorio
         marker
           .bindPopup(
             makePopupHTML(
@@ -167,13 +256,11 @@ export default function CotizacionSection({
         });
         setSelectedAddress("Ciudad Universitaria, Tegucigalpa, Honduras");
 
-        // Drag del marcador → geocodificación inversa
         marker.on("dragend", () => {
           const pos = marker.getLatLng();
           applyPosition(pos.lat, pos.lng);
         });
 
-        // Click en el mapa → mueve el marcador
         map.on("click", (e) => {
           marker.setLatLng(e.latlng);
           applyPosition(e.latlng.lat, e.latlng.lng);
@@ -223,21 +310,6 @@ export default function CotizacionSection({
     }
   };
 
-  // ── Ubicación actual ──────────────────────────────────────────────────────
-  const handleMyLocation = () => {
-    if (!navigator.geolocation) return alert("Geolocalización no disponible.");
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        const L = window.L;
-        const latlng = L.latLng(coords.latitude, coords.longitude);
-        mapInstanceRef.current.setView(latlng, 17);
-        markerRef.current.setLatLng(latlng);
-        applyPosition(coords.latitude, coords.longitude, "📡 Mi ubicación");
-      },
-      () => alert("No se pudo obtener su ubicación."),
-    );
-  };
-
   // ── Estilos ───────────────────────────────────────────────────────────────
   const inputStyle = {
     width: "100%",
@@ -262,9 +334,7 @@ export default function CotizacionSection({
     display: "block",
   };
 
-  const serviciosSeleccionados = selectedCodes
-    .map(findServicio)
-    .filter(Boolean);
+  const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
 
   return (
     <section
@@ -284,37 +354,14 @@ export default function CotizacionSection({
             personalizada.
           </p>
 
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              {
-                icon: "✉️",
-                label: "Correo",
-                value: "jefatura.labs.ic@unah.edu.hn",
-                isEmail: true,
-              },
-              {
-                icon: "👤",
-                label: "Jefe de Laboratorios",
-                value: "ING. JOEL FRANCISCO AMADOR R.",
-              },
-              {
-                icon: "🏛️",
-                label: "Departamento",
-                value: "INGENIERÍA CIVIL — UNAH",
-              },
-              {
-                icon: "📍",
-                label: "Ubicación",
-                value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA",
-              },
-              { icon: "🤝", label: "En colaboración con", value: "FUNDAUNAH" },
-              {
-                icon: "🕐",
-                label: "Horario",
-                value: "LUNES – VIERNES / 8:00 AM – 3:30 PM",
-              },
+              { icon: "✉️",  label: "Correo",               value: "jefatura.labs.ic@unah.edu.hn", isEmail: true },
+              { icon: "👤",  label: "Jefe de Laboratorios", value: "ING. JOEL FRANCISCO AMADOR R." },
+              { icon: "🏛️", label: "Departamento",          value: "INGENIERÍA CIVIL — UNAH" },
+              { icon: "📍",  label: "Ubicación",            value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA" },
+              { icon: "🤝",  label: "En colaboración con",  value: "FUNDAUNAH" },
+              { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:30 PM" },
             ].map(({ icon, label, value, isEmail }) => (
               <div
                 key={label}
@@ -329,25 +376,10 @@ export default function CotizacionSection({
               >
                 <span style={{ fontSize: "20px" }}>{icon}</span>
                 <div>
-                  <div
-                    style={{
-                      fontSize: "10px",
-                      fontWeight: 700,
-                      color: "#6b7280",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      marginBottom: "2px",
-                    }}
-                  >
+                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "2px" }}>
                     {label}
                   </div>
-                  <div
-                    style={{
-                      fontWeight: isEmail ? 600 : 700,
-                      color: isEmail ? "#3b5bdb" : "inherit",
-                      fontSize: "14px",
-                    }}
-                  >
+                  <div style={{ fontWeight: isEmail ? 600 : 700, color: isEmail ? "#3b5bdb" : "inherit", fontSize: "14px" }}>
                     {value}
                   </div>
                 </div>
@@ -396,28 +428,18 @@ export default function CotizacionSection({
             }}
           >
             {[
-              {
-                label: "Nombre completo",
-                type: "text",
-                placeholder: "Ej. María López",
-              },
-              {
-                label: "Correo electrónico",
-                type: "email",
-                placeholder: "correo@ejemplo.com",
-              },
-              {
-                label: "Empresa / Institución",
-                type: "text",
-                placeholder: "Nombre de la empresa",
-              },
-              { label: "Teléfono", type: "tel", placeholder: "+504 0000-0000" },
-            ].map(({ label, type, placeholder }) => (
-              <div key={label}>
+              { label: "Nombre completo",      field: "nombre",   type: "text",  placeholder: "Ej. María López" },
+              { label: "Correo electrónico",   field: "correo",   type: "email", placeholder: "correo@ejemplo.com" },
+              { label: "Empresa / Institución",field: "empresa",  type: "text",  placeholder: "Nombre de la empresa" },
+              { label: "Teléfono",             field: "telefono", type: "tel",   placeholder: "+504 0000-0000" },
+            ].map(({ label, field, type, placeholder }) => (
+              <div key={field}>
                 <label style={labelStyle}>{label}</label>
                 <input
                   type={type}
                   placeholder={placeholder}
+                  value={form[field]}
+                  onChange={handleFormChange(field)}
                   style={inputStyle}
                 />
               </div>
@@ -426,28 +448,11 @@ export default function CotizacionSection({
 
           {/* Servicios seleccionados */}
           <div style={{ marginBottom: "16px" }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "6px",
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <label style={labelStyle}>
                 Servicios solicitados
                 {serviciosSeleccionados.length > 0 && (
-                  <span
-                    style={{
-                      marginLeft: "8px",
-                      background: "#3b5bdb",
-                      color: "white",
-                      borderRadius: "999px",
-                      padding: "1px 7px",
-                      fontSize: "10px",
-                      fontWeight: 700,
-                    }}
-                  >
+                  <span style={{ marginLeft: "8px", background: "#3b5bdb", color: "white", borderRadius: "999px", padding: "1px 7px", fontSize: "10px", fontWeight: 700 }}>
                     {serviciosSeleccionados.length}
                   </span>
                 )}
@@ -455,15 +460,7 @@ export default function CotizacionSection({
               {serviciosSeleccionados.length > 1 && (
                 <button
                   onClick={onClear}
-                  style={{
-                    fontSize: "11px",
-                    color: "#ef4444",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontWeight: 600,
-                    padding: 0,
-                  }}
+                  style={{ fontSize: "11px", color: "#ef4444", background: "none", border: "none", cursor: "pointer", fontWeight: 600, padding: 0 }}
                 >
                   Limpiar todo
                 </button>
@@ -471,143 +468,41 @@ export default function CotizacionSection({
             </div>
 
             {serviciosSeleccionados.length === 0 ? (
-              <div
-                style={{
-                  padding: "20px 16px",
-                  borderRadius: "10px",
-                  border: "1.5px dashed #d1d5db",
-                  background: "#f9fafb",
-                  textAlign: "center",
-                }}
-              >
+              <div style={{ padding: "20px 16px", borderRadius: "10px", border: "1.5px dashed #d1d5db", background: "#f9fafb", textAlign: "center" }}>
                 <div style={{ fontSize: "22px", marginBottom: "6px" }}>🔬</div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    fontWeight: 500,
-                  }}
-                >
-                  Ningún servicio seleccionado aún
-                </div>
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#d1d5db",
-                    marginTop: "3px",
-                  }}
-                >
-                  Use el botón{" "}
-                  <strong style={{ color: "#6b7280" }}>Cotizar</strong> en el
-                  catálogo de servicios
+                <div style={{ fontSize: "12px", color: "#9ca3af", fontWeight: 500 }}>Ningún servicio seleccionado aún</div>
+                <div style={{ fontSize: "11px", color: "#d1d5db", marginTop: "3px" }}>
+                  Use el botón <strong style={{ color: "#6b7280" }}>Cotizar</strong> en el catálogo de servicios
                 </div>
               </div>
             ) : (
-              <div
-                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
-              >
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {serviciosSeleccionados.map((svc) => (
                   <div
                     key={svc.code}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "10px 14px",
-                      borderRadius: "10px",
-                      background: "#eef2fb",
-                      border: "1px solid #c7d2fe",
-                    }}
+                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: "10px", background: "#eef2fb", border: "1px solid #c7d2fe" }}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: "#3b5bdb",
-                          background: "#dbeafe",
-                          borderRadius: "6px",
-                          padding: "2px 8px",
-                          whiteSpace: "nowrap",
-                          flexShrink: 0,
-                        }}
-                      >
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#3b5bdb", background: "#dbeafe", borderRadius: "6px", padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
                         {svc.code}
                       </span>
                       <div style={{ minWidth: 0 }}>
-                        <div
-                          style={{
-                            fontSize: "13px",
-                            fontWeight: 600,
-                            color: "#1e3a8a",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
+                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#1e3a8a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                           {svc.name}
                         </div>
                         {svc.sub && (
-                          <div
-                            style={{
-                              fontSize: "11px",
-                              color: "#6b7280",
-                              fontStyle: "italic",
-                            }}
-                          >
-                            {svc.sub}
-                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280", fontStyle: "italic" }}>{svc.sub}</div>
                         )}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "8px",
-                        flexShrink: 0,
-                        marginLeft: "8px",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: "10px",
-                          color: "#6b7280",
-                          background: "#e5e7eb",
-                          borderRadius: "4px",
-                          padding: "2px 6px",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "8px" }}>
+                      <span style={{ fontSize: "10px", color: "#6b7280", background: "#e5e7eb", borderRadius: "4px", padding: "2px 6px", whiteSpace: "nowrap" }}>
                         {svc.norma}
                       </span>
                       <button
                         onClick={() => onRemoveSvc(svc.code)}
                         title="Quitar servicio"
-                        style={{
-                          width: "20px",
-                          height: "20px",
-                          borderRadius: "50%",
-                          background: "#fee2e2",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#ef4444",
-                          fontSize: "14px",
-                          fontWeight: 700,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          lineHeight: 1,
-                          flexShrink: 0,
-                        }}
+                        style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#fee2e2", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "14px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 }}
                       >
                         ×
                       </button>
@@ -623,66 +518,70 @@ export default function CotizacionSection({
             <label style={labelStyle}>Descripción / Detalles adicionales</label>
             <textarea
               placeholder="Cantidad de muestras, nombre del proyecto, observaciones..."
+              value={form.descripcion}
+              onChange={handleFormChange("descripcion")}
               style={{ ...inputStyle, height: "110px", resize: "vertical" }}
             />
           </div>
 
+          {/* Banner de resultado */}
+          {resultado && (
+            <div
+              style={{
+                marginBottom: "16px",
+                padding: "14px 18px",
+                borderRadius: "10px",
+                background: resultado.ok ? "#f0fdf4" : "#fef2f2",
+                border: `1px solid ${resultado.ok ? "#86efac" : "#fca5a5"}`,
+                color: resultado.ok ? "#166534" : "#991b1b",
+                fontSize: "13px",
+                fontWeight: 600,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <span style={{ fontSize: "16px" }}>{resultado.ok ? "✅" : "❌"}</span>
+              {resultado.message}
+            </div>
+          )}
+
           {/* Botón enviar */}
           <button
-            disabled={selectedCodes.length === 0}
+            onClick={handleSubmit}
+            disabled={selectedCodes.length === 0 || enviando}
             style={{
               width: "100%",
               padding: "12px",
               borderRadius: "10px",
-              background: selectedCodes.length === 0 ? "#9ca3af" : "#3b5bdb",
+              background: selectedCodes.length === 0 || enviando ? "#9ca3af" : "#3b5bdb",
               color: "white",
               fontWeight: 700,
               fontSize: "14px",
               border: "none",
-              cursor: selectedCodes.length === 0 ? "not-allowed" : "pointer",
+              cursor: selectedCodes.length === 0 || enviando ? "not-allowed" : "pointer",
               marginBottom: "28px",
               letterSpacing: "0.03em",
               transition: "background 0.2s",
             }}
           >
-            {selectedCodes.length === 0
+            {enviando
+              ? "Enviando…"
+              : selectedCodes.length === 0
               ? "Seleccione al menos un servicio"
               : `Enviar solicitud (${selectedCodes.length} servicio${selectedCodes.length > 1 ? "s" : ""}) →`}
           </button>
 
           {/* ── MAPA ─────────────────────────────────────────────────────── */}
-          <div
-            style={{ borderTop: "1px solid var(--border)", paddingTop: "24px" }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                marginBottom: "6px",
-              }}
-            >
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: "24px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <span style={{ fontSize: "18px" }}>📍</span>
-              <h4
-                style={{
-                  fontWeight: 700,
-                  fontSize: "15px",
-                  color: "var(--fg)",
-                  margin: 0,
-                }}
-              >
+              <h4 style={{ fontWeight: 700, fontSize: "15px", color: "var(--fg)", margin: 0 }}>
                 Seleccionar ubicación en el mapa
               </h4>
             </div>
-            <p
-              style={{
-                fontSize: "12px",
-                color: "#6b7280",
-                marginBottom: "14px",
-              }}
-            >
-              Haga clic en el mapa o arrastre el marcador. El nombre del lugar
-              se detecta automáticamente.
+            <p style={{ fontSize: "12px", color: "#6b7280", marginBottom: "14px" }}>
+              Haga clic en el mapa o arrastre el marcador. El nombre del lugar se detecta automáticamente.
             </p>
 
             {/* Buscador */}
@@ -698,34 +597,25 @@ export default function CotizacionSection({
               <button
                 onClick={handleSearch}
                 disabled={searching}
-                style={{
-                  padding: "10px 16px",
-                  borderRadius: "10px",
-                  background: "#3b5bdb",
-                  color: "white",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  border: "none",
-                  cursor: searching ? "wait" : "pointer",
-                  whiteSpace: "nowrap",
-                  opacity: searching ? 0.7 : 1,
-                }}
+                style={{ padding: "10px 16px", borderRadius: "10px", background: "#3b5bdb", color: "white", fontWeight: 600, fontSize: "13px", border: "none", cursor: searching ? "wait" : "pointer", whiteSpace: "nowrap", opacity: searching ? 0.7 : 1 }}
               >
                 {searching ? "Buscando…" : "Buscar"}
               </button>
               <button
-                onClick={handleMyLocation}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "10px",
-                  background: "#eef2fb",
-                  color: "#3b5bdb",
-                  fontWeight: 600,
-                  fontSize: "13px",
-                  border: "1px solid #c7d2fe",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
+                onClick={() => {
+                  if (!navigator.geolocation) return alert("Geolocalización no disponible.");
+                  navigator.geolocation.getCurrentPosition(
+                    ({ coords }) => {
+                      const L = window.L;
+                      const latlng = L.latLng(coords.latitude, coords.longitude);
+                      mapInstanceRef.current.setView(latlng, 17);
+                      markerRef.current.setLatLng(latlng);
+                      applyPosition(coords.latitude, coords.longitude, "📡 Mi ubicación");
+                    },
+                    () => alert("No se pudo obtener su ubicación."),
+                  );
                 }}
+                style={{ padding: "10px 14px", borderRadius: "10px", background: "#eef2fb", color: "#3b5bdb", fontWeight: 600, fontSize: "13px", border: "1px solid #c7d2fe", cursor: "pointer", whiteSpace: "nowrap" }}
               >
                 📡 Mi ubicación
               </button>
@@ -734,98 +624,32 @@ export default function CotizacionSection({
             {/* Mapa */}
             <div
               ref={mapRef}
-              style={{
-                height: "320px",
-                borderRadius: "12px",
-                overflow: "hidden",
-                border: "1px solid var(--border)",
-                background: "#f3f4f6",
-              }}
+              style={{ height: "320px", borderRadius: "12px", overflow: "hidden", border: "1px solid var(--border)", background: "#f3f4f6" }}
             />
 
             {/* Panel de resultado */}
             {selectedCoords && (
-              <div
-                style={{
-                  marginTop: "10px",
-                  padding: "12px 16px",
-                  background: "#eef2fb",
-                  borderRadius: "10px",
-                  border: "1px solid #c7d2fe",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: "10px",
-                    fontWeight: 700,
-                    color: "#6b7280",
-                    letterSpacing: "0.08em",
-                    textTransform: "uppercase",
-                    marginBottom: "5px",
-                  }}
-                >
+              <div style={{ marginTop: "10px", padding: "12px 16px", background: "#eef2fb", borderRadius: "10px", border: "1px solid #c7d2fe" }}>
+                <div style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>
                   Ubicación seleccionada
                 </div>
 
                 {loadingAddress ? (
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "13px",
-                        height: "13px",
-                        border: "2px solid #3b5bdb",
-                        borderTopColor: "transparent",
-                        borderRadius: "50%",
-                        animation: "spin 0.7s linear infinite",
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      style={{
-                        fontSize: "13px",
-                        color: "#9ca3af",
-                        fontStyle: "italic",
-                      }}
-                    >
-                      Detectando nombre del lugar…
-                    </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "5px" }}>
+                    <div style={{ width: "13px", height: "13px", border: "2px solid #3b5bdb", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.7s linear infinite", flexShrink: 0 }} />
+                    <span style={{ fontSize: "13px", color: "#9ca3af", fontStyle: "italic" }}>Detectando nombre del lugar…</span>
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 ) : (
-                  <div
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      color: "#1e3a8a",
-                      marginBottom: "5px",
-                      lineHeight: 1.45,
-                    }}
-                  >
+                  <div style={{ fontSize: "13px", fontWeight: 600, color: "#1e3a8a", marginBottom: "5px", lineHeight: 1.45 }}>
                     {selectedAddress}
                   </div>
                 )}
 
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: "#6b7280",
-                    display: "flex",
-                    gap: "16px",
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div style={{ fontSize: "11px", color: "#6b7280", display: "flex", gap: "16px", flexWrap: "wrap" }}>
                   <span>🌐 Lat: {selectedCoords.lat}</span>
                   <span>Lng: {selectedCoords.lng}</span>
-                  <span style={{ marginLeft: "auto", fontStyle: "italic" }}>
-                    Arrastre el marcador para ajustar
-                  </span>
+                  <span style={{ marginLeft: "auto", fontStyle: "italic" }}>Arrastre el marcador para ajustar</span>
                 </div>
               </div>
             )}

@@ -69,7 +69,28 @@ export default function ServiciosSection({ onSelectSvc }) {
             Tarifario de Servicios
           </h2>
         </div>
+        {/* Info box ISO */}
+        <div
+          className="flex gap-5 items-start p-7 rounded-[12px] mt-4"
+          style={{ background: 'var(--blue-pale)', border: '1px solid rgba(0,44,158,.2)' }}
+        >
+          <div className="text-[1.4rem] flex-shrink-0 mt-[0.1rem]">ℹ️</div>
+          <p className="text-[0.83rem] leading-[1.75]" style={{ color: 'var(--navy)' }}>
+            Los servicios ofrecidos por el laboratorio se encuentran en su primera fase de implementación
+            si necesita saber si hay mas servicios disponibles o si su ensayo de interés no aparece en el listado, contáctenos para consultas 
+            específicas sobre sus necesidades de ensayo.{' '}
+            <strong style={{ color: 'var(--blue)' }}>
+              <a
+                href="mailto:laboratorio.ic@unah.edu.hn"
+                style={{ color: 'var(--blue)', textDecoration: 'none' }}
+              >
+                laboratorio.ic@unah.edu.hn
+              </a>
+            </strong>.
+          </p>
+        </div>
       </div>
+       
 
       {/* Tabs */}
       <div className="flex gap-2 mb-10 flex-wrap">
