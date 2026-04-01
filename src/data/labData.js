@@ -139,10 +139,6 @@ export const ENSAYOS_NORMA = {
     label: '⚙ Agregados',
     cols: ['Código', 'Ensayo', 'Norma ASTM', ''],
     rows: [
-      { code: 'AG-01', name: 'Granulometría de Agregados',       astm: 'ASTM C136', aashto: '' },
-      { code: 'AG-02', name: 'Peso Específico — Agregado Grueso', astm: 'ASTM C127', aashto: '' },
-      { code: 'AG-03', name: 'Peso Específico — Agregado Fino',   astm: 'ASTM C128', aashto: '' },
-      { code: 'AG-04', name: 'Peso Unitario Suelto',             astm: 'ASTM C29',  aashto: '' },
       { code: 'AG-08', name: 'Alterabilidad en Sulfatos',        astm: 'ASTM C88',  aashto: '' },
     ],
   },
@@ -151,7 +147,6 @@ export const ENSAYOS_NORMA = {
     cols: ['Código', 'Ensayo', 'Norma ASTM', ''],
     rows: [
       { code: 'AC-01', name: 'Tensión — Carga de Fluencia y Rotura', astm: 'ASTM A370', aashto: '' },
-      { code: 'AC-02', name: 'Doblado de Barras',                    astm: 'ASTM A615', aashto: '' },
     ],
   },
 }
