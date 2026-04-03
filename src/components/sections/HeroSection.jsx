@@ -1,5 +1,5 @@
 import bgVideo from '../../assets/hero-video.mp4'
-import pumaImg from '../../assets/puma_sin_fondo.png'
+import pumaImg from '../../assets/logo_civil.png'
 
 const BG_VIDEO_SRC = bgVideo
 const PUMA_IMG_SRC = pumaImg

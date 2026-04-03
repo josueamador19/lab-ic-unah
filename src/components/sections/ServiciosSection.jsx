@@ -69,6 +69,7 @@ export default function ServiciosSection({ onSelectSvc }) {
             Tarifario de Servicios
           </h2>
         </div>
+
         {/* Info box ISO */}
         <div
           className="flex gap-5 items-start p-7 rounded-[12px] mt-4"
@@ -86,7 +87,7 @@ export default function ServiciosSection({ onSelectSvc }) {
               >
                 laboratorio.ic@unah.edu.hn
               </a>
-            </strong>.
+            </strong>
           </p>
         </div>
       </div>
