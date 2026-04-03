@@ -159,8 +159,8 @@ export const PROCESO_STEPS = [
   { num: '05', title: 'Resultados', desc: 'Informe firmado por el Ing. responsable con los resultados técnicos de los ensayos realizados.' },
 ]
  // Equipos
-import topografia from '../assets/topografia.png'
-import maquinaDeDesgaste       from '../assets/maquina_de_desgaste.jpg'
+import topografia from '../assets/Topografia.png'
+import maquinaDeDesgaste       from '../assets/Maquina_de_desgaste.jpg'
 import equipoHidrometria   from '../assets/EquipoDeHidrometria.jpg'
 import granulometria      from '../assets/granulometria.jpg'
 import compresionuniversal      from '../assets/compresionuniversal.jpg'
