@@ -161,7 +161,7 @@ export const PROCESO_STEPS = [
  // Equipos
 import topografia from '../assets/Topografia.png'
 import maquinaDeDesgaste       from '../assets/Maquina_de_desgaste.jpg'
-import equipoHidrometria   from '../assets/EquipoDeHidrometria.jpg'
+import equipoHidrometria   from '../assets/EquipodeHidrometria.jpg'
 import granulometria      from '../assets/granulometria.jpg'
 import compresionuniversal      from '../assets/compresionuniversal.jpg'
 
