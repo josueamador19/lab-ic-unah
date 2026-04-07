@@ -221,60 +221,8 @@ export default function NormasSection() {
           ))}
         </div>
 
-        {/* Tabla ensayos por norma */}
-        <div className="mt-12">
-          <div
-            className="text-[0.64rem] tracking-[3px] uppercase mb-1"
-            style={{ color: 'var(--blue-soft)', fontFamily: 'JetBrains Mono,monospace' }}
-          >
-            // Relación Ensayo — Norma
-          </div>
-          <h3
-            className="font-black mb-2"
-            style={{
-              fontFamily: 'Helvetica Neue,Helvetica,Arial,sans-serif',
-              fontSize: 'clamp(1.5rem,3vw,2.2rem)',
-              color: 'var(--navy)',
-              letterSpacing: '-0.2px',
-            }}
-          >
-            Ensayos y su Normativa
-          </h3>
-          <p
-            className="text-[0.88rem] leading-[1.75] max-w-[700px] mb-10"
-            style={{ color: 'var(--gray-dk)' }}
-          >
-            Tabla de referencia cruzada entre cada ensayo ofrecido y las normas técnicas
-            bajo las que se ejecuta.
-          </p>
+        {/**Condicional de cantidades de ensayo. agregar alerta par el correo de GMAIL*/}
 
-          {Object.values(ENSAYOS_NORMA).map((section, i) => (
-            <EnsayoTable key={i} section={section} />
-          ))}
-        </div>
-
-        {/* Info box ISO */}
-        <div
-          className="flex gap-5 items-start p-7 rounded-[12px] mt-4"
-          style={{ background: 'var(--blue-pale)', border: '1px solid rgba(0,44,158,.2)' }}
-        >
-          <div className="text-[1.4rem] flex-shrink-0 mt-[0.1rem]">ℹ️</div>
-          <p className="text-[0.83rem] leading-[1.75]" style={{ color: 'var(--navy)' }}>
-            El laboratorio se encuentra en proceso de fortalecimiento de su sistema de calidad
-            bajo los lineamientos de{' '}
-            <strong style={{ color: 'var(--blue)' }}>ISO/IEC 17025</strong>.
-            Para consultas sobre la validez técnica de los resultados o la aplicabilidad de una
-            norma específica para su proyecto, contáctenos en{' '}
-            <strong style={{ color: 'var(--blue)' }}>
-              <a
-                href="mailto:laboratorio.ic@unah.edu.hn"
-                style={{ color: 'var(--blue)', textDecoration: 'none' }}
-              >
-                laboratorio.ic@unah.edu.hn
-              </a>
-            </strong>.
-          </p>
-        </div>
 
       </div>
     </section>

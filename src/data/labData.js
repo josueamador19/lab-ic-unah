@@ -24,7 +24,7 @@ export const SERVICIOS = {
     norma: 'ASTM',
     items: [
       { code: 'CU-01', name: 'Curado de Cilindros', norma: 'ASTM C31 / AASHTO T23' },
-      { code: 'CU-04', name: 'Rotura de Cilindros', norma: 'ASTM C39 / AASHTO T22' },
+      { code: 'CU-04', name: 'Rotura de Cilindros y bloques', norma: 'ASTM C39 / AASHTO T22' },
     ],
   },
   agregados: {
@@ -55,16 +55,16 @@ export const TOPOGRAFIA = {
     label: '🗺 Topografía Catastral',
     pill: 'ST-01 — ST-03',
     items: [
-      { code: 'ST-01', name: 'Tegucigalpa (TGU)',          note: 'Tarifa por día de trabajo en campo' },
-      { code: 'ST-02', name: 'San Pedro Sula (SPS)',        note: 'Tarifa por día de trabajo en campo' },
-      { code: 'ST-03', name: 'Tierra Adentro / Interior',  note: 'Incluye viáticos según zona de destino' },
+      { code: 'ST-01', name: 'Tegucigalpa (TGU)',          note: 'Tarifa por día de trabajo en campo' , norma: 'Normas Propias'},
+      { code: 'ST-02', name: 'San Pedro Sula (SPS)',        note: 'Tarifa por día de trabajo en campo' , norma: 'Normas Propias'},
+      { code: 'ST-03', name: 'Tierra Adentro / Interior',  note: 'Incluye viáticos según zona de destino' , norma: 'Normas Propias'},
     ],
   },
   ingenieria: {
     label: '🗺 Topografía para Proyectos de Ingeniería',
     pill: 'ST-04',
     items: [
-      { code: 'ST-04', name: 'Proyectos de Ingeniería', note: 'Tarifa por día de trabajo en campo' },
+      { code: 'ST-04', name: 'Proyectos de Ingeniería', note: 'Tarifa por día de trabajo en campo' , norma: 'Normas Propias'},
     ],
   },
 }
@@ -155,7 +155,7 @@ export const PROCESO_STEPS = [
   { num: '01', title: 'Solicitud', desc: 'Complete el formulario con los ensayos requeridos, cantidad de muestras y datos del proyecto.' },
   { num: '02', title: 'Cotización', desc: 'En línea llenando el formulario o presencial en el segundo piso del edificio B1. El equipo técnico le enviará una propuesta formal con tiempos de entrega en 24–48 horas hábiles.' },
   { num: '03', title: 'Pago', desc: 'Se le comunicará el proceso de pago vía correo electrónico con las instrucciones y monto a cancelar.' },
-  { num: '04', title: 'Ensayo', desc: 'CEntrega de muestras en Edificio B1, 1er nivel. Horario de Lunes a Viernes / 8:00 AM - 3:00 PM' },
+  { num: '04', title: 'Ensayo', desc: 'Entrega de muestras en Edificio B1, 1er nivel. Horario de Lunes a Viernes / 8:00 AM - 3:00 PM' },
   { num: '05', title: 'Resultados', desc: 'Informe firmado por el Ing. responsable con los resultados técnicos de los ensayos realizados.' },
 ]
  // Equipos
@@ -196,7 +196,7 @@ export const EQUIPOS = [
   },
   {
     title: 'Máquina de Compresión Universal',
-    desc: 'Prensa hidráulica para ensayo de resistencia a la compresión de cilindros y bloques de concreto. Capacidad hasta 2,000 kN bajo norma ASTM C39 / AASHTO T22.',
+    desc: 'Prensa hidráulica para ensayo de resistencia a la compresión de cilindros y tension en el acero. Capacidad hasta 950 kN bajo norma ASTM C39 / AASHTO T22.',
     specs: null ,// ['spec1', 'spec2', 'spec3'], // agregar especificaciones técnicas relevantes
     badge: 'Concreto · CU-04',
     img: compresionuniversal, 

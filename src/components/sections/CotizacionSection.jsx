@@ -3,6 +3,9 @@ import { SERVICIOS, TOPOGRAFIA } from "../../data/labData";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
+// Códigos que pertenecen a topografía — no piden muestras/ensayos
+const TOPO_CODES = ["ST-01", "ST-02", "ST-03", "ST-04"];
+
 // Helper: busca el objeto completo por código
 function findServicio(code) {
   for (const cat of Object.values(SERVICIOS)) {
@@ -65,26 +68,28 @@ export default function CotizacionSection({
   onRemoveSvc,
   onClear,
 }) {
-  const mapRef = useRef(null);
+  const mapRef         = useRef(null);
   const mapInstanceRef = useRef(null);
-  const markerRef = useRef(null);
+  const markerRef      = useRef(null);
 
-  const [selectedCoords, setSelectedCoords] = useState(null);
+  const [selectedCoords,  setSelectedCoords]  = useState(null);
   const [selectedAddress, setSelectedAddress] = useState(null);
-  const [loadingAddress, setLoadingAddress] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [loadingAddress,  setLoadingAddress]  = useState(false);
+  const [searchQuery,     setSearchQuery]     = useState("");
+  const [searching,       setSearching]       = useState(false);
+  const [mapLoaded,       setMapLoaded]       = useState(false);
 
   // ── Estado del formulario ─────────────────────────────────────────────────
   const [form, setForm] = useState({
-    nombre: "",
-    correo: "",
-    empresa: "",
-    telefono: "",
+    nombre:      "",
+    correo:      "",
+    empresa:     "",
+    telefono:    "",
     descripcion: "",
+    muestras:    "",   // cantidad de muestras (solo servicios no-topo)
+    ensayos:     "",   // cantidad de ensayos  (solo servicios no-topo)
   });
-  const [enviando, setEnviando] = useState(false);
+  const [enviando,  setEnviando]  = useState(false);
   const [resultado, setResultado] = useState(null); // { ok, message }
 
   const DEFAULT_LAT = 14.0818;
@@ -93,22 +98,28 @@ export default function CotizacionSection({
   const handleFormChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  // Detecta si hay al menos un servicio que NO es topografía
+  const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
+  const tieneNoTopo = serviciosSeleccionados.some(
+    (s) => !TOPO_CODES.includes(s.code),
+  );
+
   // ── Envío al backend ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (selectedCodes.length === 0) return;
 
-    const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
-
     const payload = {
       nombre:      form.nombre.trim(),
       correo:      form.correo.trim(),
-      empresa:     form.empresa.trim()   || null,
-      telefono:    form.telefono.trim()  || null,
-      descripcion: form.descripcion.trim() || null,
+      empresa:     form.empresa.trim()      || null,
+      telefono:    form.telefono.trim()     || null,
+      descripcion: form.descripcion.trim()  || null,
+      muestras:    tieneNoTopo && form.muestras ? parseInt(form.muestras) : null,
+      ensayos:     tieneNoTopo && form.ensayos  ? parseInt(form.ensayos)  : null,
       servicios:   serviciosSeleccionados.map((s) => ({
         code:  s.code,
         name:  s.name,
-        norma: s.norma,
+        norma: s.norma ?? null,
         sub:   s.sub ?? null,
       })),
       ubicacion: selectedCoords
@@ -120,7 +131,6 @@ export default function CotizacionSection({
         : null,
     };
 
-    // Validación mínima en el frontend
     if (!payload.nombre) {
       setResultado({ ok: false, message: "Por favor ingrese su nombre." });
       return;
@@ -134,21 +144,21 @@ export default function CotizacionSection({
     setResultado(null);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/cotizacion`, {
+      const res  = await fetch(`${API_URL}/api/v1/cotizacion`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify(payload),
       });
-
       const data = await res.json();
 
       if (res.ok) {
         setResultado({ ok: true, message: data.message });
-        // Limpiar formulario tras envío exitoso
-        setForm({ nombre: "", correo: "", empresa: "", telefono: "", descripcion: "" });
+        setForm({
+          nombre: "", correo: "", empresa: "", telefono: "",
+          descripcion: "", muestras: "", ensayos: "",
+        });
         onClear?.();
       } else {
-        // Error de validación 422 o error del servidor
         const detail = data?.detail;
         const msg =
           typeof detail === "string"
@@ -198,28 +208,25 @@ export default function CotizacionSection({
   useEffect(() => {
     if (mapLoaded || mapInstanceRef.current) return;
 
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href =
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
+    const link  = document.createElement("link");
+    link.rel    = "stylesheet";
+    link.href   = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css";
     document.head.appendChild(link);
 
-    const script = document.createElement("script");
-    script.src =
-      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
-    script.onload = () => {
+    const script    = document.createElement("script");
+    script.src      = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js";
+    script.onload   = () => {
       setTimeout(() => {
         if (!mapRef.current || mapInstanceRef.current) return;
         const L = window.L;
 
         const map = L.map(mapRef.current, {
           center: [DEFAULT_LAT, DEFAULT_LNG],
-          zoom: 16,
+          zoom:   16,
         });
 
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
           maxZoom: 19,
         }).addTo(map);
 
@@ -229,14 +236,14 @@ export default function CotizacionSection({
               fill="#3b5bdb" stroke="white" stroke-width="2.5"/>
             <circle cx="18" cy="18" r="7" fill="white"/>
           </svg>`,
-          className: "",
-          iconSize: [36, 48],
-          iconAnchor: [18, 48],
+          className:   "",
+          iconSize:    [36, 48],
+          iconAnchor:  [18, 48],
           popupAnchor: [0, -52],
         });
 
         const marker = L.marker([DEFAULT_LAT, DEFAULT_LNG], {
-          icon: dropIcon,
+          icon:      dropIcon,
           draggable: true,
         }).addTo(map);
 
@@ -267,7 +274,7 @@ export default function CotizacionSection({
         });
 
         map.invalidateSize();
-        markerRef.current = marker;
+        markerRef.current      = marker;
         mapInstanceRef.current = map;
         setMapLoaded(true);
       }, 300);
@@ -283,7 +290,7 @@ export default function CotizacionSection({
       const data = await searchPlace(searchQuery);
       if (data.length > 0) {
         const { lat, lon, display_name } = data[0];
-        const L = window.L;
+        const L      = window.L;
         const latlng = L.latLng(parseFloat(lat), parseFloat(lon));
         mapInstanceRef.current.setView(latlng, 17);
         markerRef.current.setLatLng(latlng);
@@ -296,9 +303,7 @@ export default function CotizacionSection({
         setSelectedAddress(shortAddr);
 
         markerRef.current
-          .bindPopup(makePopupHTML("🔍 Resultado de búsqueda", shortAddr), {
-            maxWidth: 280,
-          })
+          .bindPopup(makePopupHTML("🔍 Resultado de búsqueda", shortAddr), { maxWidth: 280 })
           .openPopup();
       } else {
         alert("Ubicación no encontrada. Intente con otro término.");
@@ -310,32 +315,31 @@ export default function CotizacionSection({
     }
   };
 
-  // ── Estilos ───────────────────────────────────────────────────────────────
+  // ── Estilos reutilizables ─────────────────────────────────────────────────
   const inputStyle = {
-    width: "100%",
-    padding: "10px 14px",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    fontSize: "14px",
-    outline: "none",
-    background: "#f9fafb",
-    boxSizing: "border-box",
-    fontFamily: "inherit",
-    color: "#111827",
+    width:       "100%",
+    padding:     "10px 14px",
+    borderRadius:"10px",
+    border:      "1px solid #d1d5db",
+    fontSize:    "14px",
+    outline:     "none",
+    background:  "#f9fafb",
+    boxSizing:   "border-box",
+    fontFamily:  "inherit",
+    color:       "#111827",
   };
 
   const labelStyle = {
-    fontSize: "10px",
-    fontWeight: 700,
-    color: "#6b7280",
+    fontSize:      "10px",
+    fontWeight:    700,
+    color:         "#6b7280",
     letterSpacing: "0.08em",
     textTransform: "uppercase",
-    marginBottom: "4px",
-    display: "block",
+    marginBottom:  "4px",
+    display:       "block",
   };
 
-  const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <section
       id="cotizacion"
@@ -343,6 +347,7 @@ export default function CotizacionSection({
       style={{ background: "var(--bg)" }}
     >
       <div className="grid lg:grid-cols-[420px_1fr] gap-8 max-w-[1400px] mx-auto">
+
         {/* ── PANEL IZQUIERDO ───────────────────────────────────────────────*/}
         <div>
           <h2 className="text-3xl mb-4" style={{ fontWeight: 800 }}>
@@ -356,22 +361,22 @@ export default function CotizacionSection({
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {[
-              { icon: "✉️",  label: "Correo",               value: "jefatura.labs.ic@unah.edu.hn", isEmail: true },
+              { icon: "✉️",  label: "Correo",               value: "laboratorio.ic@unah.edu.hn", isEmail: true },
               { icon: "👤",  label: "Jefe de Laboratorios", value: "ING. JOEL FRANCISCO AMADOR R." },
               { icon: "🏛️", label: "Departamento",          value: "INGENIERÍA CIVIL — UNAH" },
               { icon: "📍",  label: "Ubicación",            value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA" },
               { icon: "🤝",  label: "En colaboración con",  value: "FUNDAUNAH" },
-              { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:30 PM" },
+              { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:00 PM" },
             ].map(({ icon, label, value, isEmail }) => (
               <div
                 key={label}
                 style={{
-                  display: "flex",
+                  display:    "flex",
                   alignItems: "center",
-                  gap: "14px",
+                  gap:        "14px",
                   background: "#eef2fb",
                   borderRadius: "12px",
-                  padding: "14px 18px",
+                  padding:    "14px 18px",
                 }}
               >
                 <span style={{ fontSize: "20px" }}>{icon}</span>
@@ -389,18 +394,18 @@ export default function CotizacionSection({
 
           <div
             style={{
-              marginTop: "20px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              background: "#fefce8",
-              border: "1px solid #fde68a",
+              marginTop:    "20px",
+              display:      "inline-flex",
+              alignItems:   "center",
+              gap:          "6px",
+              background:   "#fefce8",
+              border:       "1px solid #fde68a",
               borderRadius: "999px",
-              padding: "6px 14px",
-              fontSize: "11px",
-              fontWeight: 700,
-              color: "#92400e",
-              letterSpacing: "0.05em",
+              padding:      "6px 14px",
+              fontSize:     "11px",
+              fontWeight:   700,
+              color:        "#92400e",
+              letterSpacing:"0.05em",
             }}
           >
             ✳️ PENDIENTE PROCESO DE PAGO — CONFIRMACIÓN EN 24H
@@ -412,26 +417,26 @@ export default function CotizacionSection({
           className="p-6 rounded-xl"
           style={{
             background: "var(--card)",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow)",
+            border:     "1px solid var(--border)",
+            boxShadow:  "var(--shadow)",
           }}
         >
           <h3 className="text-xl font-bold mb-6">Solicitar cotización</h3>
 
-          {/* Campos base */}
+          {/* ── Campos base ─────────────────────────────────────────────────*/}
           <div
             style={{
-              display: "grid",
+              display:             "grid",
               gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-              marginBottom: "16px",
+              gap:                 "16px",
+              marginBottom:        "16px",
             }}
           >
             {[
-              { label: "Nombre completo",      field: "nombre",   type: "text",  placeholder: "Ej. María López" },
-              { label: "Correo electrónico",   field: "correo",   type: "email", placeholder: "correo@ejemplo.com" },
-              { label: "Empresa / Institución",field: "empresa",  type: "text",  placeholder: "Nombre de la empresa" },
-              { label: "Teléfono",             field: "telefono", type: "tel",   placeholder: "+504 0000-0000" },
+              { label: "Nombre completo",       field: "nombre",   type: "text",  placeholder: "Ej. María López" },
+              { label: "Correo electrónico",    field: "correo",   type: "email", placeholder: "correo@ejemplo.com" },
+              { label: "Empresa / Institución", field: "empresa",  type: "text",  placeholder: "Nombre de la empresa" },
+              { label: "Teléfono",              field: "telefono", type: "tel",   placeholder: "+504 0000-0000" },
             ].map(({ label, field, type, placeholder }) => (
               <div key={field}>
                 <label style={labelStyle}>{label}</label>
@@ -446,7 +451,7 @@ export default function CotizacionSection({
             ))}
           </div>
 
-          {/* Servicios seleccionados */}
+          {/* ── Servicios seleccionados ──────────────────────────────────────*/}
           <div style={{ marginBottom: "16px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
               <label style={labelStyle}>
@@ -513,32 +518,103 @@ export default function CotizacionSection({
             )}
           </div>
 
-          {/* Descripción */}
+          {/* ── Muestras y ensayos (solo si hay servicios no-topo) ───────────*/}
+          {tieneNoTopo && (
+            <div
+              style={{
+                marginBottom: "16px",
+                padding:      "16px 18px",
+                borderRadius: "12px",
+                background:   "#f0fdf4",
+                border:       "1px solid #86efac",
+              }}
+            >
+              <div
+                style={{
+                  fontSize:     "11px",
+                  fontWeight:   700,
+                  color:        "#166534",
+                  letterSpacing:"0.06em",
+                  textTransform:"uppercase",
+                  marginBottom: "12px",
+                  display:      "flex",
+                  alignItems:   "center",
+                  gap:          "6px",
+                }}
+              >
+                🔢 Cantidad de muestras y ensayos
+              </div>
+              <div
+                style={{
+                  display:             "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap:                 "12px",
+                }}
+              >
+                <div>
+                  <label style={{ ...labelStyle, color: "#166534" }}>
+                    N° de muestras a entregar
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Ej. 3"
+                    value={form.muestras}
+                    onChange={handleFormChange("muestras")}
+                    style={{
+                      ...inputStyle,
+                      border:     "1px solid #86efac",
+                      background: "#fff",
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ ...labelStyle, color: "#166534" }}>
+                    N° de ensayos requeridos
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="Ej. 5"
+                    value={form.ensayos}
+                    onChange={handleFormChange("ensayos")}
+                    style={{
+                      ...inputStyle,
+                      border:     "1px solid #86efac",
+                      background: "#fff",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Descripción ──────────────────────────────────────────────────*/}
           <div style={{ marginBottom: "20px" }}>
             <label style={labelStyle}>Descripción / Detalles adicionales</label>
             <textarea
-              placeholder="Cantidad de muestras, nombre del proyecto, observaciones..."
+              placeholder="Nombre del proyecto, observaciones, condiciones especiales..."
               value={form.descripcion}
               onChange={handleFormChange("descripcion")}
               style={{ ...inputStyle, height: "110px", resize: "vertical" }}
             />
           </div>
 
-          {/* Banner de resultado */}
+          {/* ── Banner de resultado ──────────────────────────────────────────*/}
           {resultado && (
             <div
               style={{
                 marginBottom: "16px",
-                padding: "14px 18px",
+                padding:      "14px 18px",
                 borderRadius: "10px",
-                background: resultado.ok ? "#f0fdf4" : "#fef2f2",
-                border: `1px solid ${resultado.ok ? "#86efac" : "#fca5a5"}`,
-                color: resultado.ok ? "#166534" : "#991b1b",
-                fontSize: "13px",
-                fontWeight: 600,
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
+                background:   resultado.ok ? "#f0fdf4" : "#fef2f2",
+                border:       `1px solid ${resultado.ok ? "#86efac" : "#fca5a5"}`,
+                color:        resultado.ok ? "#166534" : "#991b1b",
+                fontSize:     "13px",
+                fontWeight:   600,
+                display:      "flex",
+                alignItems:   "center",
+                gap:          "8px",
               }}
             >
               <span style={{ fontSize: "16px" }}>{resultado.ok ? "✅" : "❌"}</span>
@@ -546,23 +622,23 @@ export default function CotizacionSection({
             </div>
           )}
 
-          {/* Botón enviar */}
+          {/* ── Botón enviar ─────────────────────────────────────────────────*/}
           <button
             onClick={handleSubmit}
             disabled={selectedCodes.length === 0 || enviando}
             style={{
-              width: "100%",
-              padding: "12px",
+              width:        "100%",
+              padding:      "12px",
               borderRadius: "10px",
-              background: selectedCodes.length === 0 || enviando ? "#9ca3af" : "#3b5bdb",
-              color: "white",
-              fontWeight: 700,
-              fontSize: "14px",
-              border: "none",
-              cursor: selectedCodes.length === 0 || enviando ? "not-allowed" : "pointer",
+              background:   selectedCodes.length === 0 || enviando ? "#9ca3af" : "#3b5bdb",
+              color:        "white",
+              fontWeight:   700,
+              fontSize:     "14px",
+              border:       "none",
+              cursor:       selectedCodes.length === 0 || enviando ? "not-allowed" : "pointer",
               marginBottom: "28px",
-              letterSpacing: "0.03em",
-              transition: "background 0.2s",
+              letterSpacing:"0.03em",
+              transition:   "background 0.2s",
             }}
           >
             {enviando
@@ -572,7 +648,7 @@ export default function CotizacionSection({
               : `Enviar solicitud (${selectedCodes.length} servicio${selectedCodes.length > 1 ? "s" : ""}) →`}
           </button>
 
-          {/* ── MAPA ─────────────────────────────────────────────────────── */}
+          {/* ── MAPA ─────────────────────────────────────────────────────────*/}
           <div style={{ borderTop: "1px solid var(--border)", paddingTop: "24px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
               <span style={{ fontSize: "18px" }}>📍</span>
@@ -606,7 +682,7 @@ export default function CotizacionSection({
                   if (!navigator.geolocation) return alert("Geolocalización no disponible.");
                   navigator.geolocation.getCurrentPosition(
                     ({ coords }) => {
-                      const L = window.L;
+                      const L      = window.L;
                       const latlng = L.latLng(coords.latitude, coords.longitude);
                       mapInstanceRef.current.setView(latlng, 17);
                       markerRef.current.setLatLng(latlng);
@@ -627,7 +703,7 @@ export default function CotizacionSection({
               style={{ height: "320px", borderRadius: "12px", overflow: "hidden", border: "1px solid var(--border)", background: "#f3f4f6" }}
             />
 
-            {/* Panel de resultado */}
+            {/* Panel de coordenadas */}
             {selectedCoords && (
               <div style={{ marginTop: "10px", padding: "12px 16px", background: "#eef2fb", borderRadius: "10px", border: "1px solid #c7d2fe" }}>
                 <div style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "5px" }}>

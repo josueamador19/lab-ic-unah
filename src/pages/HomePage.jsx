@@ -14,17 +14,17 @@ export default function HomePage() {
 
   const handleSelectSvc = (code) => {
     addCode(code)
-    setTimeout(() => {
-      document.getElementById('cotizacion')?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
   }
 
   return (
     <>
       <Navbar />
       <HeroSection />
-      <NormasSection/>
-      <ServiciosSection onSelectSvc={handleSelectSvc} />
+      <NormasSection />
+      <ServiciosSection
+        onSelectSvc={handleSelectSvc}
+        selectedCodes={selectedCodes}
+      />
       <EquiposSection />
       <ProcesoSection />
       <CotizacionSection
