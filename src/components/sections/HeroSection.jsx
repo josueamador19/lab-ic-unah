@@ -52,7 +52,7 @@ export default function HeroSection() {
             textTransform: 'uppercase', color: '#FFE033',
             marginBottom: 22,
           }}>
-            PLAN DE REACTIVACIÓN — VENTA DE SERVICIOS 2026
+            VENTA DE SERVICIOS
           </div>
 
           <h1 style={{

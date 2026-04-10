@@ -86,9 +86,11 @@ export default function CotizacionSection({
     empresa:     "",
     telefono:    "",
     descripcion: "",
-    muestras:    "",   // cantidad de muestras (solo servicios no-topo)
-    ensayos:     "",   // cantidad de ensayos  (solo servicios no-topo)
   });
+
+  // muestras por código de servicio: { "SC-01": "3", "SC-02": "", ... }
+  const [muestrasPorSvc, setMuestrasPorSvc] = useState({});
+
   const [enviando,  setEnviando]  = useState(false);
   const [resultado, setResultado] = useState(null); // { ok, message }
 
@@ -98,11 +100,11 @@ export default function CotizacionSection({
   const handleFormChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+  const handleMuestrasChange = (code) => (e) =>
+    setMuestrasPorSvc((prev) => ({ ...prev, [code]: e.target.value }));
+
   // Detecta si hay al menos un servicio que NO es topografía
   const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
-  const tieneNoTopo = serviciosSeleccionados.some(
-    (s) => !TOPO_CODES.includes(s.code),
-  );
 
   // ── Envío al backend ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -114,13 +116,14 @@ export default function CotizacionSection({
       empresa:     form.empresa.trim()      || null,
       telefono:    form.telefono.trim()     || null,
       descripcion: form.descripcion.trim()  || null,
-      muestras:    tieneNoTopo && form.muestras ? parseInt(form.muestras) : null,
-      ensayos:     tieneNoTopo && form.ensayos  ? parseInt(form.ensayos)  : null,
       servicios:   serviciosSeleccionados.map((s) => ({
-        code:  s.code,
-        name:  s.name,
-        norma: s.norma ?? null,
-        sub:   s.sub ?? null,
+        code:     s.code,
+        name:     s.name,
+        norma:    s.norma ?? null,
+        sub:      s.sub ?? null,
+        muestras: !TOPO_CODES.includes(s.code) && muestrasPorSvc[s.code]
+          ? parseInt(muestrasPorSvc[s.code])
+          : null,
       })),
       ubicacion: selectedCoords
         ? {
@@ -154,9 +157,9 @@ export default function CotizacionSection({
       if (res.ok) {
         setResultado({ ok: true, message: data.message });
         setForm({
-          nombre: "", correo: "", empresa: "", telefono: "",
-          descripcion: "", muestras: "", ensayos: "",
+          nombre: "", correo: "", empresa: "", telefono: "", descripcion: "",
         });
+        setMuestrasPorSvc({});
         onClear?.();
       } else {
         const detail = data?.detail;
@@ -367,6 +370,9 @@ export default function CotizacionSection({
               { icon: "📍",  label: "Ubicación",            value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA" },
               { icon: "🤝",  label: "En colaboración con",  value: "FUNDAUNAH" },
               { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:00 PM" },
+              { icon: "🏦", label: "Banco", value: "BAC" },
+              { icon: "💳", label: "# De Cuenta", value: "730522021" },
+              { icon: "🇭🇳", label: "Tipo de Cuenta", value: "CHEQUES - HNL" }
             ].map(({ icon, label, value, isEmail }) => (
               <div
                 key={label}
@@ -390,25 +396,6 @@ export default function CotizacionSection({
                 </div>
               </div>
             ))}
-          </div>
-
-          <div
-            style={{
-              marginTop:    "20px",
-              display:      "inline-flex",
-              alignItems:   "center",
-              gap:          "6px",
-              background:   "#fefce8",
-              border:       "1px solid #fde68a",
-              borderRadius: "999px",
-              padding:      "6px 14px",
-              fontSize:     "11px",
-              fontWeight:   700,
-              color:        "#92400e",
-              letterSpacing:"0.05em",
-            }}
-          >
-            ✳️ PENDIENTE PROCESO DE PAGO — CONFIRMACIÓN EN 24H
           </div>
         </div>
 
@@ -482,112 +469,94 @@ export default function CotizacionSection({
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {serviciosSeleccionados.map((svc) => (
-                  <div
-                    key={svc.code}
-                    style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", borderRadius: "10px", background: "#eef2fb", border: "1px solid #c7d2fe" }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: "11px", fontWeight: 700, color: "#3b5bdb", background: "#dbeafe", borderRadius: "6px", padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        {svc.code}
-                      </span>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: "13px", fontWeight: 600, color: "#1e3a8a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                          {svc.name}
+                {serviciosSeleccionados.map((svc) => {
+                  const esTopo = TOPO_CODES.includes(svc.code);
+                  return (
+                    <div
+                      key={svc.code}
+                      style={{
+                        borderRadius: "10px",
+                        background:   "#eef2fb",
+                        border:       "1px solid #c7d2fe",
+                        overflow:     "hidden",
+                      }}
+                    >
+                      {/* Fila principal del servicio */}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
+                          <span style={{ fontSize: "11px", fontWeight: 700, color: "#3b5bdb", background: "#dbeafe", borderRadius: "6px", padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                            {svc.code}
+                          </span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: "13px", fontWeight: 600, color: "#1e3a8a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {svc.name}
+                            </div>
+                            {svc.sub && (
+                              <div style={{ fontSize: "11px", color: "#6b7280", fontStyle: "italic" }}>{svc.sub}</div>
+                            )}
+                          </div>
                         </div>
-                        {svc.sub && (
-                          <div style={{ fontSize: "11px", color: "#6b7280", fontStyle: "italic" }}>{svc.sub}</div>
-                        )}
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "8px" }}>
+                          <span style={{ fontSize: "10px", color: "#6b7280", background: "#e5e7eb", borderRadius: "4px", padding: "2px 6px", whiteSpace: "nowrap" }}>
+                            {svc.norma}
+                          </span>
+                          <button
+                            onClick={() => onRemoveSvc(svc.code)}
+                            title="Quitar servicio"
+                            style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#fee2e2", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "14px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 }}
+                          >
+                            ×
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Input de muestras — solo para servicios no-topo */}
+                      {!esTopo && (
+                        <div
+                          style={{
+                            padding:       "8px 14px 12px",
+                            borderTop:     "1px dashed #c7d2fe",
+                            background:    "#f5f7ff",
+                            display:       "flex",
+                            alignItems:    "center",
+                            gap:           "10px",
+                          }}
+                        >
+                          <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
+                            🧪 N° de muestras
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            placeholder="Ej. 3"
+                            value={muestrasPorSvc[svc.code] ?? ""}
+                            onChange={handleMuestrasChange(svc.code)}
+                            style={{
+                              width:        "90px",
+                              padding:      "5px 10px",
+                              borderRadius: "7px",
+                              border:       "1px solid #c7d2fe",
+                              fontSize:     "13px",
+                              outline:      "none",
+                              background:   "#fff",
+                              color:        "#1e3a8a",
+                              fontWeight:   600,
+                              fontFamily:   "inherit",
+                            }}
+                          />
+                          {muestrasPorSvc[svc.code] && (
+                            <span style={{ fontSize: "11px", color: "#3b5bdb", fontStyle: "italic" }}>
+                              {muestrasPorSvc[svc.code]} muestra{parseInt(muestrasPorSvc[svc.code]) !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0, marginLeft: "8px" }}>
-                      <span style={{ fontSize: "10px", color: "#6b7280", background: "#e5e7eb", borderRadius: "4px", padding: "2px 6px", whiteSpace: "nowrap" }}>
-                        {svc.norma}
-                      </span>
-                      <button
-                        onClick={() => onRemoveSvc(svc.code)}
-                        title="Quitar servicio"
-                        style={{ width: "20px", height: "20px", borderRadius: "50%", background: "#fee2e2", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "14px", fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1, flexShrink: 0 }}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
-
-          {/* ── Muestras y ensayos (solo si hay servicios no-topo) ───────────*/}
-          {tieneNoTopo && (
-            <div
-              style={{
-                marginBottom: "16px",
-                padding:      "16px 18px",
-                borderRadius: "12px",
-                background:   "#f0fdf4",
-                border:       "1px solid #86efac",
-              }}
-            >
-              <div
-                style={{
-                  fontSize:     "11px",
-                  fontWeight:   700,
-                  color:        "#166534",
-                  letterSpacing:"0.06em",
-                  textTransform:"uppercase",
-                  marginBottom: "12px",
-                  display:      "flex",
-                  alignItems:   "center",
-                  gap:          "6px",
-                }}
-              >
-                🔢 Cantidad de muestras y ensayos
-              </div>
-              <div
-                style={{
-                  display:             "grid",
-                  gridTemplateColumns: "1fr 1fr",
-                  gap:                 "12px",
-                }}
-              >
-                <div>
-                  <label style={{ ...labelStyle, color: "#166534" }}>
-                    N° de muestras a entregar
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Ej. 3"
-                    value={form.muestras}
-                    onChange={handleFormChange("muestras")}
-                    style={{
-                      ...inputStyle,
-                      border:     "1px solid #86efac",
-                      background: "#fff",
-                    }}
-                  />
-                </div>
-                <div>
-                  <label style={{ ...labelStyle, color: "#166534" }}>
-                    N° de ensayos requeridos
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Ej. 5"
-                    value={form.ensayos}
-                    onChange={handleFormChange("ensayos")}
-                    style={{
-                      ...inputStyle,
-                      border:     "1px solid #86efac",
-                      background: "#fff",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* ── Descripción ──────────────────────────────────────────────────*/}
           <div style={{ marginBottom: "20px" }}>
