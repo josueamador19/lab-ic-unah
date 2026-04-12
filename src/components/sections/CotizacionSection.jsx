@@ -119,8 +119,9 @@ export default function CotizacionSection({
       servicios:   serviciosSeleccionados.map((s) => ({
         code:     s.code,
         name:     s.name,
-        norma:    s.norma ?? null,
-        sub:      s.sub ?? null,
+        norma:    s.norma    ?? null,
+        sub:      s.sub      ?? null,
+        precio:   s.precio   ?? null,                              // ← precio desde labdata
         muestras: !TOPO_CODES.includes(s.code) && muestrasPorSvc[s.code]
           ? parseInt(muestrasPorSvc[s.code])
           : null,
@@ -370,9 +371,6 @@ export default function CotizacionSection({
               { icon: "📍",  label: "Ubicación",            value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA" },
               { icon: "🤝",  label: "En colaboración con",  value: "FUNDAUNAH" },
               { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:00 PM" },
-              { icon: "🏦", label: "Banco", value: "BAC" },
-              { icon: "💳", label: "# De Cuenta", value: "730522021" },
-              { icon: "🇭🇳", label: "Tipo de Cuenta", value: "CHEQUES - HNL" }
             ].map(({ icon, label, value, isEmail }) => (
               <div
                 key={label}
