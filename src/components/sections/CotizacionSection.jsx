@@ -3,10 +3,8 @@ import { SERVICIOS, TOPOGRAFIA } from "../../data/labData";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
-// Códigos que pertenecen a topografía — no piden muestras/ensayos
 const TOPO_CODES = ["ST-01", "ST-02", "ST-03", "ST-04"];
 
-// Helper: busca el objeto completo por código
 function findServicio(code) {
   for (const cat of Object.values(SERVICIOS)) {
     const found = cat.items.find((i) => i.code === code);
@@ -19,7 +17,6 @@ function findServicio(code) {
   return null;
 }
 
-// Geocodificación inversa gratuita con Nominatim (sin API key)
 async function reverseGeocode(lat, lng) {
   try {
     const res = await fetch(
@@ -45,7 +42,6 @@ async function reverseGeocode(lat, lng) {
   return null;
 }
 
-// Búsqueda de lugar por texto con Nominatim
 async function searchPlace(query) {
   const res = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
@@ -54,7 +50,6 @@ async function searchPlace(query) {
   return res.json();
 }
 
-// Crea el popup HTML del marcador
 function makePopupHTML(title, body) {
   return `
     <div style="font-family:'Segoe UI',sans-serif;padding:2px;min-width:180px">
@@ -62,6 +57,14 @@ function makePopupHTML(title, body) {
       <div style="font-size:11px;color:#6b7280;line-height:1.5">${body}</div>
     </div>`;
 }
+
+const CAMPOS_OBLIGATORIOS = [
+  { field: "nombre",         label: "Nombre completo" },
+  { field: "correo",         label: "Correo electrónico" },
+  { field: "empresa",        label: "Empresa / Institución" },
+  { field: "telefono",       label: "Teléfono" },
+  { field: "nombreProyecto", label: "Nombre del proyecto" },
+];
 
 export default function CotizacionSection({
   selectedCodes = [],
@@ -79,49 +82,100 @@ export default function CotizacionSection({
   const [searching,       setSearching]       = useState(false);
   const [mapLoaded,       setMapLoaded]       = useState(false);
 
-  // ── Estado del formulario ─────────────────────────────────────────────────
   const [form, setForm] = useState({
-    nombre:      "",
-    correo:      "",
-    empresa:     "",
-    telefono:    "",
-    descripcion: "",
+    nombre:            "",
+    correo:            "",
+    empresa:           "",
+    telefono:          "",
+    rtn:               "",
+    nombreProyecto:    "",
+    direccionProyecto: "",
+    descripcion:       "",
   });
 
-  // muestras por código de servicio: { "SC-01": "3", "SC-02": "", ... }
+  const [camposError, setCamposError] = useState(new Set());
   const [muestrasPorSvc, setMuestrasPorSvc] = useState({});
-
   const [enviando,  setEnviando]  = useState(false);
-  const [resultado, setResultado] = useState(null); // { ok, message }
+  const [resultado, setResultado] = useState(null);
 
   const DEFAULT_LAT = 14.0818;
   const DEFAULT_LNG = -87.2068;
 
-  const handleFormChange = (field) => (e) =>
+  // ── Handlers genérico ─────────────────────────────────────────────────────
+  const handleFormChange = (field) => (e) => {
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
+    if (camposError.has(field)) {
+      setCamposError((prev) => { const s = new Set(prev); s.delete(field); return s; });
+    }
+  };
+
+  // ── Handler teléfono: 0000-0000 ───────────────────────────────────────────
+  const handleTelefonoChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+    const formatted =
+      digits.length <= 4
+        ? digits
+        : digits.slice(0, 4) + "-" + digits.slice(4);
+    setForm((prev) => ({ ...prev, telefono: formatted }));
+    if (camposError.has("telefono")) {
+      setCamposError((prev) => { const s = new Set(prev); s.delete("telefono"); return s; });
+    }
+  };
+
+  // ── Handler RTN: 0000-0000-000000 ────────────────────────────────────────
+  const handleRtnChange = (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 14);
+    let formatted = digits;
+    if (digits.length > 8) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4, 8) + "-" + digits.slice(8);
+    } else if (digits.length > 4) {
+      formatted = digits.slice(0, 4) + "-" + digits.slice(4);
+    }
+    setForm((prev) => ({ ...prev, rtn: formatted }));
+  };
 
   const handleMuestrasChange = (code) => (e) =>
     setMuestrasPorSvc((prev) => ({ ...prev, [code]: e.target.value }));
 
-  // Detecta si hay al menos un servicio que NO es topografía
   const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
 
   // ── Envío al backend ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (selectedCodes.length === 0) return;
 
+    const vacios = CAMPOS_OBLIGATORIOS
+      .filter(({ field }) => !form[field].trim())
+      .map(({ field }) => field);
+
+    if (vacios.length > 0) {
+      setCamposError(new Set(vacios));
+      const etiquetas = CAMPOS_OBLIGATORIOS
+        .filter(({ field }) => vacios.includes(field))
+        .map(({ label }) => label);
+      const lista = etiquetas.length === 1
+        ? etiquetas[0]
+        : etiquetas.slice(0, -1).join(", ") + " y " + etiquetas.at(-1);
+      setResultado({ ok: false, message: `Por favor complete los siguientes campos: ${lista}.` });
+      return;
+    }
+
+    setCamposError(new Set());
+
     const payload = {
-      nombre:      form.nombre.trim(),
-      correo:      form.correo.trim(),
-      empresa:     form.empresa.trim()      || null,
-      telefono:    form.telefono.trim()     || null,
-      descripcion: form.descripcion.trim()  || null,
-      servicios:   serviciosSeleccionados.map((s) => ({
+      nombre:            form.nombre.trim(),
+      correo:            form.correo.trim(),
+      empresa:           form.empresa.trim(),
+      telefono:          form.telefono.trim(),
+      rtn:               form.rtn.trim()               || null,
+      nombreProyecto:    form.nombreProyecto.trim(),
+      direccionProyecto: form.direccionProyecto.trim() || null,
+      descripcion:       form.descripcion.trim()       || null,
+      servicios: serviciosSeleccionados.map((s) => ({
         code:     s.code,
         name:     s.name,
         norma:    s.norma    ?? null,
         sub:      s.sub      ?? null,
-        precio:   s.precio   ?? null,                              // ← precio desde labdata
+        precio:   s.precio   ?? null,
         muestras: !TOPO_CODES.includes(s.code) && muestrasPorSvc[s.code]
           ? parseInt(muestrasPorSvc[s.code])
           : null,
@@ -134,15 +188,6 @@ export default function CotizacionSection({
           }
         : null,
     };
-
-    if (!payload.nombre) {
-      setResultado({ ok: false, message: "Por favor ingrese su nombre." });
-      return;
-    }
-    if (!payload.correo) {
-      setResultado({ ok: false, message: "Por favor ingrese su correo." });
-      return;
-    }
 
     setEnviando(true);
     setResultado(null);
@@ -158,9 +203,11 @@ export default function CotizacionSection({
       if (res.ok) {
         setResultado({ ok: true, message: data.message });
         setForm({
-          nombre: "", correo: "", empresa: "", telefono: "", descripcion: "",
+          nombre: "", correo: "", empresa: "", telefono: "",
+          rtn: "", nombreProyecto: "", direccionProyecto: "", descripcion: "",
         });
         setMuestrasPorSvc({});
+        setCamposError(new Set());
         onClear?.();
       } else {
         const detail = data?.detail;
@@ -265,7 +312,7 @@ export default function CotizacionSection({
           lat: DEFAULT_LAT.toFixed(6),
           lng: DEFAULT_LNG.toFixed(6),
         });
-        setSelectedAddress("Ciudad Universitaria, Tegucigalpa, Honduras");
+        setSelectedAddress("Ciudad Universitaria, Tegucigalda, Honduras");
 
         marker.on("dragend", () => {
           const pos = marker.getLatLng();
@@ -320,18 +367,22 @@ export default function CotizacionSection({
   };
 
   // ── Estilos reutilizables ─────────────────────────────────────────────────
-  const inputStyle = {
-    width:       "100%",
-    padding:     "10px 14px",
-    borderRadius:"10px",
-    border:      "1px solid #d1d5db",
-    fontSize:    "14px",
-    outline:     "none",
-    background:  "#f9fafb",
-    boxSizing:   "border-box",
-    fontFamily:  "inherit",
-    color:       "#111827",
+  const inputBase = {
+    width:        "100%",
+    padding:      "10px 14px",
+    borderRadius: "10px",
+    fontSize:     "14px",
+    outline:      "none",
+    background:   "#f9fafb",
+    boxSizing:    "border-box",
+    fontFamily:   "inherit",
+    color:        "#111827",
   };
+
+  const inputStyle = (field) => ({
+    ...inputBase,
+    border: field && camposError.has(field) ? "1.5px solid #ef4444" : "1px solid #d1d5db",
+  });
 
   const labelStyle = {
     fontSize:      "10px",
@@ -342,6 +393,15 @@ export default function CotizacionSection({
     marginBottom:  "4px",
     display:       "block",
   };
+
+  const requiredBadge = (
+    <span style={{ color: "#ef4444", marginLeft: "2px" }}>*</span>
+  );
+
+  const errorMsg = (field) =>
+    camposError.has(field)
+      ? <span style={{ fontSize: "10px", color: "#ef4444", marginTop: "3px", display: "block" }}>Este campo es obligatorio</span>
+      : null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -375,12 +435,12 @@ export default function CotizacionSection({
               <div
                 key={label}
                 style={{
-                  display:    "flex",
-                  alignItems: "center",
-                  gap:        "14px",
-                  background: "#eef2fb",
+                  display:      "flex",
+                  alignItems:   "center",
+                  gap:          "14px",
+                  background:   "#eef2fb",
                   borderRadius: "12px",
-                  padding:    "14px 18px",
+                  padding:      "14px 18px",
                 }}
               >
                 <span style={{ fontSize: "20px" }}>{icon}</span>
@@ -406,39 +466,91 @@ export default function CotizacionSection({
             boxShadow:  "var(--shadow)",
           }}
         >
-          <h3 className="text-xl font-bold mb-6">Solicitar cotización</h3>
+          <h3 className="text-xl font-bold mb-1">Solicitar cotización</h3>
 
-          {/* ── Campos base ─────────────────────────────────────────────────*/}
-          <div
-            style={{
-              display:             "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap:                 "16px",
-              marginBottom:        "16px",
-            }}
-          >
-            {[
-              { label: "Nombre completo",       field: "nombre",   type: "text",  placeholder: "Ej. María López" },
-              { label: "Correo electrónico",    field: "correo",   type: "email", placeholder: "correo@ejemplo.com" },
-              { label: "Empresa / Institución", field: "empresa",  type: "text",  placeholder: "Nombre de la empresa" },
-              { label: "Teléfono",              field: "telefono", type: "tel",   placeholder: "+504 0000-0000" },
-            ].map(({ label, field, type, placeholder }) => (
-              <div key={field}>
-                <label style={labelStyle}>{label}</label>
-                <input
-                  type={type}
-                  placeholder={placeholder}
-                  value={form[field]}
-                  onChange={handleFormChange(field)}
-                  style={inputStyle}
-                />
-              </div>
-            ))}
+          <p style={{ fontSize: "11px", color: "#9ca3af", marginBottom: "20px" }}>
+            Los campos marcados con <span style={{ color: "#ef4444" }}>*</span> son obligatorios.
+          </p>
+
+          {/* ── Fila 1: Nombre y Correo ──────────────────────────────────────*/}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={labelStyle}>Nombre completo {requiredBadge}</label>
+              <input type="text" placeholder="Ej. María López" value={form.nombre} onChange={handleFormChange("nombre")} style={inputStyle("nombre")} />
+              {errorMsg("nombre")}
+            </div>
+            <div>
+              <label style={labelStyle}>Correo electrónico {requiredBadge}</label>
+              <input type="email" placeholder="correo@ejemplo.com" value={form.correo} onChange={handleFormChange("correo")} style={inputStyle("correo")} />
+              {errorMsg("correo")}
+            </div>
+          </div>
+
+          {/* ── Fila 2: Empresa y Teléfono ───────────────────────────────────*/}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={labelStyle}>Empresa / Institución / Persona Individual {requiredBadge}</label>
+              <input type="text" placeholder="Nombre de la empresa" value={form.empresa} onChange={handleFormChange("empresa")} style={inputStyle("empresa")} />
+              {errorMsg("empresa")}
+            </div>
+            <div>
+              <label style={labelStyle}>Teléfono {requiredBadge}</label>
+              <input
+                type="tel"
+                placeholder="9999-0000"
+                value={form.telefono}
+                onChange={handleTelefonoChange}
+                maxLength={9}
+                style={inputStyle("telefono")}
+              />
+              {errorMsg("telefono")}
+            </div>
+          </div>
+
+          {/* ── Fila 3: RTN y Nombre del proyecto ───────────────────────────*/}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+            <div>
+              <label style={labelStyle}>RTN <span style={{ color: "#9ca3af", fontWeight: 400, textTransform: "none", fontSize: "9px" }}>(Opcional)</span></label>
+              <input
+                type="text"
+                placeholder="0801-1990-000000"
+                value={form.rtn}
+                onChange={handleRtnChange}
+                maxLength={16}
+                style={inputStyle(null)}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Nombre del proyecto {requiredBadge}</label>
+              <input type="text" placeholder="Ej. Edificio Residencial Torre A" value={form.nombreProyecto} onChange={handleFormChange("nombreProyecto")} style={inputStyle("nombreProyecto")} />
+              {errorMsg("nombreProyecto")}
+            </div>
+          </div>
+
+          {/* ── Dirección exacta del proyecto ────────────────────────────────*/}
+          <div style={{ marginBottom: "16px" }}>
+            <label style={labelStyle}>
+              Dirección exacta del proyecto{" "}
+              <span style={{ color: "#9ca3af", fontWeight: 400, textTransform: "none", fontSize: "9px" }}>(Opcional)</span>
+            </label>
+            <input type="text" placeholder="Ej. Col. Palmira, Av. República de Chile, Casa #1234, Tegucigalpa" value={form.direccionProyecto} onChange={handleFormChange("direccionProyecto")} style={inputStyle(null)} />
           </div>
 
           {/* ── Servicios seleccionados ──────────────────────────────────────*/}
           <div style={{ marginBottom: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+
+            {/* Info box */}
+            <div
+              className="flex gap-5 items-start p-7 rounded-[12px] mt-4"
+              style={{ background: 'var(--blue-pale)', border: '1px solid rgba(0,44,158,.2)' }}
+            >
+              <div className="text-[1rem] flex-shrink-0 mt-[0.1rem]">ℹ️</div>
+              <p className="text-[0.85rem] leading-[1.75]" style={{ color: 'var(--navy)' }}>
+                Las muestras a las que se le realizará el ensayo, deberan de ser entregadas por el cliente en tiempo y forma{' '}
+              </p>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", marginTop: "16px" }}>
               <label style={labelStyle}>
                 Servicios solicitados
                 {serviciosSeleccionados.length > 0 && (
@@ -447,6 +559,7 @@ export default function CotizacionSection({
                   </span>
                 )}
               </label>
+
               {serviciosSeleccionados.length > 1 && (
                 <button
                   onClick={onClear}
@@ -479,7 +592,6 @@ export default function CotizacionSection({
                         overflow:     "hidden",
                       }}
                     >
-                      {/* Fila principal del servicio */}
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, minWidth: 0 }}>
                           <span style={{ fontSize: "11px", fontWeight: 700, color: "#3b5bdb", background: "#dbeafe", borderRadius: "6px", padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -508,16 +620,15 @@ export default function CotizacionSection({
                         </div>
                       </div>
 
-                      {/* Input de muestras — solo para servicios no-topo */}
                       {!esTopo && (
                         <div
                           style={{
-                            padding:       "8px 14px 12px",
-                            borderTop:     "1px dashed #c7d2fe",
-                            background:    "#f5f7ff",
-                            display:       "flex",
-                            alignItems:    "center",
-                            gap:           "10px",
+                            padding:    "8px 14px 12px",
+                            borderTop:  "1px dashed #c7d2fe",
+                            background: "#f5f7ff",
+                            display:    "flex",
+                            alignItems: "center",
+                            gap:        "10px",
                           }}
                         >
                           <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
@@ -558,12 +669,15 @@ export default function CotizacionSection({
 
           {/* ── Descripción ──────────────────────────────────────────────────*/}
           <div style={{ marginBottom: "20px" }}>
-            <label style={labelStyle}>Descripción / Detalles adicionales</label>
+            <label style={labelStyle}>
+              Descripción / Detalles adicionales{" "}
+              <span style={{ color: "#9ca3af", fontWeight: 400, textTransform: "none", fontSize: "9px" }}>(Opcional)</span>
+            </label>
             <textarea
-              placeholder="Nombre del proyecto, observaciones, condiciones especiales..."
+              placeholder="Observaciones, condiciones especiales..."
               value={form.descripcion}
               onChange={handleFormChange("descripcion")}
-              style={{ ...inputStyle, height: "110px", resize: "vertical" }}
+              style={{ ...inputBase, border: "1px solid #d1d5db", height: "90px", resize: "vertical" }}
             />
           </div>
 
@@ -580,11 +694,11 @@ export default function CotizacionSection({
                 fontSize:     "13px",
                 fontWeight:   600,
                 display:      "flex",
-                alignItems:   "center",
+                alignItems:   "flex-start",
                 gap:          "8px",
               }}
             >
-              <span style={{ fontSize: "16px" }}>{resultado.ok ? "✅" : "❌"}</span>
+              <span style={{ fontSize: "16px", flexShrink: 0 }}>{resultado.ok ? "✅" : "❌"}</span>
               {resultado.message}
             </div>
           )}
@@ -594,18 +708,18 @@ export default function CotizacionSection({
             onClick={handleSubmit}
             disabled={selectedCodes.length === 0 || enviando}
             style={{
-              width:        "100%",
-              padding:      "12px",
-              borderRadius: "10px",
-              background:   selectedCodes.length === 0 || enviando ? "#9ca3af" : "#3b5bdb",
-              color:        "white",
-              fontWeight:   700,
-              fontSize:     "14px",
-              border:       "none",
-              cursor:       selectedCodes.length === 0 || enviando ? "not-allowed" : "pointer",
-              marginBottom: "28px",
-              letterSpacing:"0.03em",
-              transition:   "background 0.2s",
+              width:         "100%",
+              padding:       "12px",
+              borderRadius:  "10px",
+              background:    selectedCodes.length === 0 || enviando ? "#9ca3af" : "#3b5bdb",
+              color:         "white",
+              fontWeight:    700,
+              fontSize:      "14px",
+              border:        "none",
+              cursor:        selectedCodes.length === 0 || enviando ? "not-allowed" : "pointer",
+              marginBottom:  "28px",
+              letterSpacing: "0.03em",
+              transition:    "background 0.2s",
             }}
           >
             {enviando
@@ -635,7 +749,7 @@ export default function CotizacionSection({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                style={{ ...inputStyle, flex: 1 }}
+                style={{ ...inputBase, border: "1px solid #d1d5db", flex: 1 }}
               />
               <button
                 onClick={handleSearch}

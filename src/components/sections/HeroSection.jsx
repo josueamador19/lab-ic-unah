@@ -18,11 +18,14 @@ export default function HeroSection() {
     <div style={{ minHeight: '10vh', maxHeight:'90vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {/* VIDEO BG */}
-      <video
+      {/**
+       * <video
         src={BG_VIDEO_SRC}
         autoPlay muted loop playsInline
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.90, zIndex: 0 }}
       />
+       * 
+       */}
 
       {/* OVERLAY */}
       <div style={{

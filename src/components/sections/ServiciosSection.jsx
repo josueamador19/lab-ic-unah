@@ -177,6 +177,8 @@ export default function ServiciosSection({ onSelectSvc, selectedCodes = [] }) {
             </strong>
           </p>
         </div>
+
+
       </div>
 
       {/* ── Tabs ────────────────────────────────────────────────────────────*/}
