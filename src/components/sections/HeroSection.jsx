@@ -15,7 +15,7 @@ const font = 'Helvetica Neue, Helvetica, Arial, sans-serif'
 
 export default function HeroSection() {
   return (
-    <div style={{ minHeight: '10vh', maxHeight:'90vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '10vh', maxHeight:'100vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {/* VIDEO BG */}
       

@@ -1,21 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { SERVICIOS, TOPOGRAFIA } from "../../data/labData";
+import useConfiguracion from "../../hooks/useConfiguracion";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 const TOPO_CODES = ["ST-01", "ST-02", "ST-03", "ST-04"];
-
-function findServicio(code) {
-  for (const cat of Object.values(SERVICIOS)) {
-    const found = cat.items.find((i) => i.code === code);
-    if (found) return found;
-  }
-  for (const cat of Object.values(TOPOGRAFIA)) {
-    const found = cat.items.find((i) => i.code === code);
-    if (found) return found;
-  }
-  return null;
-}
 
 async function reverseGeocode(lat, lng) {
   try {
@@ -66,11 +54,29 @@ const CAMPOS_OBLIGATORIOS = [
   { field: "nombreProyecto", label: "Nombre del proyecto" },
 ];
 
+function findServicio(code, servicios, topografia) {
+  for (const cat of Object.values(servicios)) {
+    const found = cat.items?.find((i) => i.code === code);
+    if (found) return found;
+  }
+  for (const cat of Object.values(topografia)) {
+    const found = cat.items?.find((i) => i.code === code);
+    if (found) return found;
+  }
+  return null;
+}
+
+const CONTACT_ICONS = { email: '✉️', jefe: '👤', departamento: '🏛️', ubicacion: '📍', colaboracion: '🤝', horario: '🕐' }
+const CONTACT_LABELS = { email: 'Correo', jefe: 'Jefe de Laboratorios', departamento: 'Departamento', ubicacion: 'Ubicación', colaboracion: 'En colaboración con', horario: 'Horario' }
+
 export default function CotizacionSection({
   selectedCodes = [],
   onRemoveSvc,
   onClear,
+  servicios = {},
+  topografia = {},
 }) {
+  const { config: labConfig } = useConfiguracion()
   const mapRef         = useRef(null);
   const mapInstanceRef = useRef(null);
   const markerRef      = useRef(null);
@@ -137,7 +143,7 @@ export default function CotizacionSection({
   const handleMuestrasChange = (code) => (e) =>
     setMuestrasPorSvc((prev) => ({ ...prev, [code]: e.target.value }));
 
-  const serviciosSeleccionados = selectedCodes.map(findServicio).filter(Boolean);
+  const serviciosSeleccionados = selectedCodes.map(code => findServicio(code, servicios, topografia)).filter(Boolean);
 
   // ── Envío al backend ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -418,42 +424,28 @@ export default function CotizacionSection({
             Contáctenos
           </h2>
           <p className="text-sm mb-6" style={{ color: "#6b7280" }}>
-            Complete el formulario o escríbanos. El Ing. Joel Francisco Amador
-            R., Jefe de Laboratorios, le responderá con una propuesta
-            personalizada.
+            Complete el formulario o escríbanos. El Jefe de Laboratorios
+            le responderá con una propuesta personalizada.
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {[
-              { icon: "✉️",  label: "Correo",               value: "laboratorio.ic@unah.edu.hn", isEmail: true },
-              { icon: "👤",  label: "Jefe de Laboratorios", value: "ING. JOEL FRANCISCO AMADOR R." },
-              { icon: "🏛️", label: "Departamento",          value: "INGENIERÍA CIVIL — UNAH" },
-              { icon: "📍",  label: "Ubicación",            value: "EDIFICIO B1, PRIMER NIVEL — CIUDAD UNIVERSITARIA" },
-              { icon: "🤝",  label: "En colaboración con",  value: "FUNDAUNAH" },
-              { icon: "🕐",  label: "Horario",              value: "LUNES – VIERNES / 8:00 AM – 3:00 PM" },
-            ].map(({ icon, label, value, isEmail }) => (
-              <div
-                key={label}
-                style={{
-                  display:      "flex",
-                  alignItems:   "center",
-                  gap:          "14px",
-                  background:   "#eef2fb",
-                  borderRadius: "12px",
-                  padding:      "14px 18px",
-                }}
-              >
-                <span style={{ fontSize: "20px" }}>{icon}</span>
-                <div>
-                  <div style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "2px" }}>
-                    {label}
-                  </div>
-                  <div style={{ fontWeight: isEmail ? 600 : 700, color: isEmail ? "#3b5bdb" : "inherit", fontSize: "14px" }}>
-                    {value}
+            {Object.keys(CONTACT_LABELS).map((key) => {
+              const value = labConfig?.[key] ?? '…'
+              const isEmail = key === 'email'
+              return (
+                <div key={key} style={{ display: "flex", alignItems: "center", gap: "14px", background: "#eef2fb", borderRadius: "12px", padding: "14px 18px" }}>
+                  <span style={{ fontSize: "20px" }}>{CONTACT_ICONS[key]}</span>
+                  <div>
+                    <div style={{ fontSize: "10px", fontWeight: 700, color: "#6b7280", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: "2px" }}>
+                      {CONTACT_LABELS[key]}
+                    </div>
+                    <div style={{ fontWeight: isEmail ? 600 : 700, color: isEmail ? "#3b5bdb" : "inherit", fontSize: "14px" }}>
+                      {isEmail ? <a href={`mailto:${value}`} style={{ color: "#3b5bdb", textDecoration: "none" }}>{value}</a> : value}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
 
@@ -473,7 +465,7 @@ export default function CotizacionSection({
           </p>
 
           {/* ── Fila 1: Nombre y Correo ──────────────────────────────────────*/}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label style={labelStyle}>Nombre completo {requiredBadge}</label>
               <input type="text" placeholder="Ej. María López" value={form.nombre} onChange={handleFormChange("nombre")} style={inputStyle("nombre")} />
@@ -487,7 +479,7 @@ export default function CotizacionSection({
           </div>
 
           {/* ── Fila 2: Empresa y Teléfono ───────────────────────────────────*/}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label style={labelStyle}>Empresa / Institución / Persona Individual {requiredBadge}</label>
               <input type="text" placeholder="Nombre de la empresa" value={form.empresa} onChange={handleFormChange("empresa")} style={inputStyle("empresa")} />
@@ -508,7 +500,7 @@ export default function CotizacionSection({
           </div>
 
           {/* ── Fila 3: RTN y Nombre del proyecto ───────────────────────────*/}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <div>
               <label style={labelStyle}>RTN <span style={{ color: "#9ca3af", fontWeight: 400, textTransform: "none", fontSize: "9px" }}>(Opcional)</span></label>
               <input
@@ -632,7 +624,7 @@ export default function CotizacionSection({
                           }}
                         >
                           <span style={{ fontSize: "11px", color: "#6b7280", fontWeight: 600, whiteSpace: "nowrap", flexShrink: 0 }}>
-                            🧪 N° de muestras
+                            N° de muestras
                           </span>
                           <input
                             type="number"
@@ -698,7 +690,7 @@ export default function CotizacionSection({
                 gap:          "8px",
               }}
             >
-              <span style={{ fontSize: "16px", flexShrink: 0 }}>{resultado.ok ? "✅" : "❌"}</span>
+              <span style={{ fontSize: "16px", flexShrink: 0 }}>{resultado.ok ? "" : ""}</span>
               {resultado.message}
             </div>
           )}

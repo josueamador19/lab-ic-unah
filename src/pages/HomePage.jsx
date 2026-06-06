@@ -8,13 +8,11 @@ import CotizacionSection from '../components/sections/CotizacionSection'
 import NormasSection from '../components/sections/NormasSection'
 import FAQSection from '../components/sections/FAQSection'
 import useQuote from '../hooks/useQuote'
+import useServicios from '../hooks/useServicios'
 
 export default function HomePage() {
   const { selectedCodes, addCode, removeCode, clearCodes } = useQuote()
-
-  const handleSelectSvc = (code) => {
-    addCode(code)
-  }
+  const { servicios, topografia, loading, error } = useServicios()
 
   return (
     <>
@@ -22,8 +20,12 @@ export default function HomePage() {
       <HeroSection />
       <NormasSection />
       <ServiciosSection
-        onSelectSvc={handleSelectSvc}
+        onSelectSvc={addCode}
         selectedCodes={selectedCodes}
+        servicios={servicios}
+        topografia={topografia}
+        loading={loading}
+        error={error}
       />
       <EquiposSection />
       <ProcesoSection />
@@ -31,6 +33,8 @@ export default function HomePage() {
         selectedCodes={selectedCodes}
         onRemoveSvc={removeCode}
         onClear={clearCodes}
+        servicios={servicios}
+        topografia={topografia}
       />
       <FAQSection />
       <Footer />

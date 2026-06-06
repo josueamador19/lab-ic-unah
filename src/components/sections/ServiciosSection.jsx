@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react'
-import { SERVICIOS, TOPOGRAFIA } from '../../data/labData'
 
 const TABS = [
   { key: 'all',       label: 'Todos' },
@@ -82,7 +81,7 @@ function SvcTable({ items, onSelect, selectedCodes }) {
   )
 }
 
-export default function ServiciosSection({ onSelectSvc, selectedCodes = [] }) {
+export default function ServiciosSection({ onSelectSvc, selectedCodes = [], servicios = {}, topografia = {}, loading = false, error = null }) {
   const [activeTab, setActiveTab]   = useState('all')
   const [toast, setToast]           = useState(null)   // nombre del servicio
   const [topoFlashing, setTopoFlashing] = useState({}) // { [code]: true }
@@ -90,13 +89,12 @@ export default function ServiciosSection({ onSelectSvc, selectedCodes = [] }) {
 
   const show = key => activeTab === 'all' || activeTab === key
 
-  // Busca el nombre de cualquier servicio por código
   const findName = (code) => {
-    for (const cat of Object.values(SERVICIOS)) {
+    for (const cat of Object.values(servicios)) {
       const found = cat.items.find(i => i.code === code)
       if (found) return found.name
     }
-    for (const cat of Object.values(TOPOGRAFIA)) {
+    for (const cat of Object.values(topografia)) {
       const found = cat.items.find(i => i.code === code)
       if (found) return found.name
     }
@@ -202,8 +200,20 @@ export default function ServiciosSection({ onSelectSvc, selectedCodes = [] }) {
         ))}
       </div>
 
+      {/* ── Estado de carga / error ─────────────────────────────────────────*/}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--gray)' }}>
+          Cargando catálogo de servicios…
+        </div>
+      )}
+      {error && (
+        <div style={{ textAlign: 'center', padding: '20px', color: '#ef4444', fontSize: '14px' }}>
+          No se pudo cargar el catálogo. Verifique que el servidor esté activo.
+        </div>
+      )}
+
       {/* ── Bloques de categoría (laboratorio) ──────────────────────────────*/}
-      {Object.entries(SERVICIOS).map(([key, cat]) => show(key) && (
+      {!loading && !error && Object.entries(servicios).map(([key, cat]) => show(key) && (
         <div key={key} className="mb-10">
           <div
             className="flex items-center gap-3 mb-4 font-bold uppercase flex-wrap"
@@ -213,16 +223,18 @@ export default function ServiciosSection({ onSelectSvc, selectedCodes = [] }) {
             <span className="cat-pill">{cat.pill}</span>
             <span className="norma-tag">{cat.norma}</span>
           </div>
-          <SvcTable
-            items={cat.items}
-            onSelect={handleSelectSvc}
-            selectedCodes={selectedCodes}
-          />
+          <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            <SvcTable
+              items={cat.items}
+              onSelect={handleSelectSvc}
+              selectedCodes={selectedCodes}
+            />
+          </div>
         </div>
       ))}
 
       {/* ── Topografía ──────────────────────────────────────────────────────*/}
-      {show('topografia') && Object.entries(TOPOGRAFIA).map(([key, topo]) => (
+      {!loading && !error && show('topografia') && Object.entries(topografia).map(([key, topo]) => (
         <div key={key} className="mb-8">
           <div
             className="flex items-center gap-3 mb-4 font-bold uppercase flex-wrap"
