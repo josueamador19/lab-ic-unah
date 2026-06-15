@@ -8,29 +8,33 @@ import CotizacionSection from '../components/sections/CotizacionSection'
 import NormasSection from '../components/sections/NormasSection'
 import FAQSection from '../components/sections/FAQSection'
 import useQuote from '../hooks/useQuote'
+import useServicios from '../hooks/useServicios'
 
 export default function HomePage() {
   const { selectedCodes, addCode, removeCode, clearCodes } = useQuote()
-
-  const handleSelectSvc = (code) => {
-    addCode(code)
-    setTimeout(() => {
-      document.getElementById('cotizacion')?.scrollIntoView({ behavior: 'smooth' })
-    }, 100)
-  }
+  const { servicios, topografia, loading, error } = useServicios()
 
   return (
     <>
       <Navbar />
       <HeroSection />
-      <NormasSection/>
-      <ServiciosSection onSelectSvc={handleSelectSvc} />
+      <NormasSection />
+      <ServiciosSection
+        onSelectSvc={addCode}
+        selectedCodes={selectedCodes}
+        servicios={servicios}
+        topografia={topografia}
+        loading={loading}
+        error={error}
+      />
       <EquiposSection />
       <ProcesoSection />
       <CotizacionSection
         selectedCodes={selectedCodes}
         onRemoveSvc={removeCode}
         onClear={clearCodes}
+        servicios={servicios}
+        topografia={topografia}
       />
       <FAQSection />
       <Footer />

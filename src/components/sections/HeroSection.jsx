@@ -1,4 +1,4 @@
-import bgVideo from '../../assets/hero-video.mp4'
+import bgVideo from '../../assets/hero-video.mov'
 import pumaImg from '../../assets/logo_civil.png'
 
 const BG_VIDEO_SRC = bgVideo
@@ -15,14 +15,17 @@ const font = 'Helvetica Neue, Helvetica, Arial, sans-serif'
 
 export default function HeroSection() {
   return (
-    <div style={{ minHeight: '10vh', maxHeight:'90vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '10vh', maxHeight:'100vh', background: '#0a1628', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
 
       {/* VIDEO BG */}
-      <video
+      
+        <video
         src={BG_VIDEO_SRC}
         autoPlay muted loop playsInline
         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.90, zIndex: 0 }}
       />
+        
+       
 
       {/* OVERLAY */}
       <div style={{
@@ -52,7 +55,7 @@ export default function HeroSection() {
             textTransform: 'uppercase', color: '#FFE033',
             marginBottom: 22,
           }}>
-            PLAN DE REACTIVACIÓN — VENTA DE SERVICIOS 2026
+            VENTA DE SERVICIOS
           </div>
 
           <h1 style={{
