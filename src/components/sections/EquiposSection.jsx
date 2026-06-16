@@ -47,7 +47,7 @@ export default function EquiposSection() {
             <div className="h-[180px] overflow-hidden" style={{ background: BG_GRADIENTS[i % BG_GRADIENTS.length] }}>
               {eq.img_url ? (
                 <img
-                  src={`${API_URL}${eq.img_url}`}
+                  src={eq.img_url.startsWith('http') ? eq.img_url : `${API_URL}${eq.img_url}`}
                   alt={eq.title}
                   style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center', display: 'block' }}
                 />

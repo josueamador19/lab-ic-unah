@@ -595,7 +595,7 @@ function EquiposTab({ adminKey }) {
           {equipos.map(eq => (
             <div key={eq.id} style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden', background: '#fff', opacity: eq.activo ? 1 : 0.55 }}>
               {eq.img_url ? (
-                <img src={`${API_URL}${eq.img_url}`} alt={eq.title} style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
+                <img src={eq.img_url.startsWith('http') ? eq.img_url : `${API_URL}${eq.img_url}`} alt={eq.title} style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
               ) : (
                 <div style={{ height: 140, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', fontSize: 13 }}>Sin imagen</div>
               )}
@@ -630,7 +630,7 @@ function EquiposTab({ adminKey }) {
 function EquipoForm({ initial, saving, onSave, onCancel }) {
   const [d, setD]     = useState(initial)
   const [file, setFile] = useState(null)
-  const [preview, setPreview] = useState(initial.img_url ? `${API_URL}${initial.img_url}` : null)
+  const [preview, setPreview] = useState(initial.img_url ? (initial.img_url.startsWith('http') ? initial.img_url : `${API_URL}${initial.img_url}`) : null)
   const fileRef = useRef()
   const set = (k) => (e) => setD(p => ({ ...p, [k]: e.target.value }))
 
